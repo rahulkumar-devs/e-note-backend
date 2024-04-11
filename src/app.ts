@@ -8,8 +8,8 @@ const app = express();
 // Routes
 
 app.get("/",(req,res,next)=>{
-    const error = createHttpError(400,"something went wrong ")
-    throw error;
+  
+    
 })
 
 // Error handler
