@@ -5,7 +5,8 @@ import "dotenv/config"
 const _config ={
     port: process.env.PORT,
     mongoDB_uri : process.env.MONGODB_URI as string,
-    env:process.env.NODE_ENV 
+    env:process.env.NODE_ENV ,
+    redis_uri : process.env.REDIS_URI
 }
 
 // freez _config so that noBody can overWrite

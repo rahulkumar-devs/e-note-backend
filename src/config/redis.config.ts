@@ -1,17 +1,15 @@
-import { createClient } from "redis";
+import Redis from "ioredis";
+import { config } from "./config";
 
-const redisConnection = async () => {
-   const client = createClient({
-      url: "rediss://default:bd95d60f68034a8993116340b88589a1@ample-sole-45561.upstash.io:45561",
-   });
+const redisClient = ()=>{
+   if(config.redis_uri){
+      console.log("Redis is connected");
+      return config.redis_uri;
+   }
+   else{
+      throw new Error("Redis connection failed")
 
-   client.on("error", (err) => console.log("Redis Client Error", err));
+   }
+}
 
-   // Connect to Redis
-   client
-      .connect()
-      .then(() => console.log("Connected to Redis"))
-      .catch((err) => console.log("Failed to connect to Redis", err));
-};
-
-export default redisConnection;
+export const redis = new Redis(redisClient());
