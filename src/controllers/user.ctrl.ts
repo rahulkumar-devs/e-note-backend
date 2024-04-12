@@ -4,6 +4,7 @@ import createHttpError from "http-errors";
 import userModel from "../models/user.model";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
+import path from "path";
 
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -40,10 +41,19 @@ const createUser = expressAsyncHandler(
    }
 );
 
-// login
-const loginUser = expressAsyncHandler(
-   async (req: Request, res: Response, next: NextFunction) => {
-      res.json("ok")
+/**
+ * Renders the login page.
+ * @param {Request} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next middleware function.
+ */
+const loginUser = expressAsyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   try {
+       // Render the login page using EJS template
+       res.render(path.join(__dirname, 'login.ejs'));
+   } catch (err) {
+       // Forward any errors to the error handling middleware
+       next(err);
    }
-);
+});
 export { createUser, loginUser };

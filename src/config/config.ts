@@ -10,8 +10,12 @@ const _config ={
     cloud_name:process.env.CLOUD_NAME,
     api_key:process.env.API_KEY,
     api_secret_key:process.env.API_SECRET_KEY,
-    jwt_secret_key:process.env.JWT_SECRET_KEY as string
+    jwt_secret_key:process.env.JWT_SECRET_KEY as string,
 
+    // google crediential
+    google_client_id:process.env.GOOGLE_CLIENT_ID as string,
+   google_client_secret :process.env.GOOGLE_CLIENT_SECRET as string,
+   express_session_secret_key:process.env.EXPRESS_SESSION_SECRET_KEY as string
 }
 
 // freez _config so that noBody can overWrite
