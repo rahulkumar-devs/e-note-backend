@@ -20,14 +20,22 @@ const createUser = expressAsyncHandler(
       } else {
          const newUser = await userModel.create({ name, email, password });
 
-         const token = jwt.sign({ sub: newUser._id }, config.jwt_secret_key, {
-            expiresIn: "7d",
-            algorithm:'HS256'
-         });
-         res.json({
-            success: true,
-            accessToken: token,
-         });
+         try {
+            const token = jwt.sign(
+               { sub: newUser._id },
+               config.jwt_secret_key,
+               {
+                  expiresIn: "7d",
+                  algorithm: "HS256",
+               }
+            );
+            res.json({
+               success: true,
+               accessToken: token,
+            });
+         } catch (error) {
+            next(createHttpError(500, "Error while jwt sign token"));
+         }
       }
    }
 );
