@@ -3,7 +3,7 @@ import { config } from "./config";
 
 const redisClient = ()=>{
    if(config.redis_uri){
-      console.log("Redis is connected");
+      console.log({message:"Redis is connected"});
       return config.redis_uri;
    }
    else{

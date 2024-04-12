@@ -4,10 +4,14 @@ import { config } from "../config/config";
 
 const globalErrorHandler = (err: HttpError, req: Request, res: Response, next: NextFunction) => {
     const statusCode = (err.statusCode as number) || 500;
+
+
+
+
  
     return res.status(statusCode).json({
        success: false,
-       message: err.message,
+       message: err.message || "internal server error",
        errorStack: config.env === "devlopment" ? err.stack : "",
     });
  }
