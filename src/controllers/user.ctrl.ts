@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
 import createHttpError from "http-errors";
 import userModel from "../models/user.model";
+import jwt from "jsonwebtoken";
+import { config } from "../config/config";
 
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -16,10 +18,15 @@ const createUser = expressAsyncHandler(
          const err = createHttpError(400, `user Already exist with ${email}`);
          return next(err);
       } else {
-         const newUser = await userModel.create({name, email, password});
+         const newUser = await userModel.create({ name, email, password });
+
+         const token = jwt.sign({ sub: newUser._id }, config.jwt_secret_key, {
+            expiresIn: "7d",
+            algorithm:'HS256'
+         });
          res.json({
             success: true,
-            data: newUser,
+            accessToken: token,
          });
       }
    }
