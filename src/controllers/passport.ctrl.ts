@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
-import path from "path";
 
-const successPassport = expressAsyncHandler(
+
+const passportCtrl = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
-      console.log(req.user);
-     res.send("Worked")
+      console.log(req.user );
+      res.json(req.user);
    }
 );
 
-export { successPassport };
+export { passportCtrl };

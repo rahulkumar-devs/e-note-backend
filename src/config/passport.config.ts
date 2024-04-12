@@ -1,6 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy, Profile } from "passport-google-oauth20";
 import { config } from "./config";
+import UserModel from "../models/user.model";
 // import { User, UserType } from './models';
 
 passport.use(
@@ -17,6 +18,12 @@ passport.use(
          profile: Profile,
          cb: (err: any, user?: any) => void
       ) => {
+
+       
+
+
+       
+
          return cb(null, profile);
       }
    )
