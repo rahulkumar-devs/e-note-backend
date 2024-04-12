@@ -8,7 +8,7 @@ const userRouter = express.Router();
 // Define routes
 userRouter.route("/register").post(createUser);
 
-userRouter.route("/login").get(loginUser);
+userRouter.route("/login").post(loginUser);
 
 // Route for initiating Google authentication
 userRouter.get(

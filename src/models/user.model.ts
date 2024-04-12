@@ -11,6 +11,7 @@ export interface IUser extends Document {
       public_id: string;
       url: string;
    };
+   isComparePassword(password: string): boolean;
 }
 
 const UserSchema = new mongoose.Schema(
@@ -37,16 +38,18 @@ UserSchema.pre<IUser>("save", async function (next) {
          );
       }
       next();
-   } catch (error) {
-      const err = createHttpError(500, "internal server error");
-      next(err);
+   } catch (error:any) {
+      // Handle error properly, e.g., by logging it
+      console.error("Error occurred during password hashing:", error);
+      // Pass the error to the callback function
+      next(error);
    }
 });
 
-
-UserSchema.methods.isComparePassword =  async function(){
-
-}
+UserSchema.methods.isComparePassword = function (password: string):boolean {
+   const isMatched = bcrypt.compareSync(password, this.password);
+   return isMatched;
+};
 
 // Make sure to use mongoose.model, not mongoose.Model
 const UserModel: Model<IUser> = mongoose.model<IUser>("User", UserSchema);

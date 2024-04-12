@@ -41,19 +41,49 @@ const createUser = expressAsyncHandler(
    }
 );
 
-/**
- * Renders the login page.
- * @param {Request} req - The request object.
- * @param {Response} res - The response object.
- * @param {NextFunction} next - The next middleware function.
- */
-const loginUser = expressAsyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-   try {
-       // Render the login page using EJS template
-       res.render(path.join(__dirname, 'login.ejs'));
-   } catch (err) {
-       // Forward any errors to the error handling middleware
-       next(err);
+const loginUser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      const { email, password } = req.body;
+      try {
+         // Check if email and password are not provided
+         if (!email || !password) {
+            return next(createHttpError(400, "All fields are required"));
+         }
+
+         // Check if the user exists in the database
+         const user = await userModel.findOne({ email });
+
+         if (!user) {
+            return next(createHttpError(400, `Email ${email} not found`));
+         }
+
+         // Check if the entered password matches the hashed password stored in the database
+         if (!user.isComparePassword(password)) {
+            return next(createHttpError(400, "Password does not match"));
+         }
+
+         // Generate a new access token
+         const token = jwt.sign(
+            { sub: user._id },
+            config.jwt_secret_key,
+            {
+               expiresIn: "7d",
+               algorithm: "HS256",
+            }
+         );
+
+         // Send the access token in the response
+         res.status(201).json({
+            success: true,
+            accessToken: token,
+         });
+
+      } catch (error: any) {
+         // Handle any other errors
+         next(createHttpError(500, error.message || "Internal server error"));
+      }
    }
-});
+);
+
+
 export { createUser, loginUser };
