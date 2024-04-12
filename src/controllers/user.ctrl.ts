@@ -29,7 +29,7 @@ const createUser = expressAsyncHandler(
                   algorithm: "HS256",
                }
             );
-            res.json({
+            res.status(201).json({
                success: true,
                accessToken: token,
             });
@@ -40,4 +40,10 @@ const createUser = expressAsyncHandler(
    }
 );
 
-export { createUser };
+// login
+const loginUser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      res.json("ok")
+   }
+);
+export { createUser, loginUser };
