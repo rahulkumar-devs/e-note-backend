@@ -16,13 +16,12 @@ const createUser = expressAsyncHandler(
          const err = createHttpError(400, `user Already exist with ${email}`);
          return next(err);
       } else {
-
+         const newUser = await userModel.create({name, email, password});
+         res.json({
+            success: true,
+            data: newUser,
+         });
       }
-
-      res.json({
-         success: true,
-         data: req.body,
-      });
    }
 );
 
