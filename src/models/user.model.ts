@@ -28,10 +28,10 @@ const UserSchema = new mongoose.Schema(
    }
 );
 
-UserSchema.pre<IUser>("save", function (next) {
+UserSchema.pre<IUser>("save", async function (next) {
    try {
       if (this.password && this.isModified("password")) {
-         this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(8));
+         this.password = await bcrypt.hashSync(this.password, bcrypt.genSaltSync(10));
       }
       next();
    } catch (error) {
@@ -39,6 +39,10 @@ UserSchema.pre<IUser>("save", function (next) {
       next(err);
    }
 });
+
+
+
+
 
 // Make sure to use mongoose.model, not mongoose.Model
 const UserModel: Model<IUser> = mongoose.model<IUser>("User", UserSchema);
