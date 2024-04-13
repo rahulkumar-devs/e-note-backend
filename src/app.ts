@@ -6,18 +6,19 @@ import userRouter from "./routes/user.route";
 import compression from "compression";
 import shouldCompress from "./utils/shouldCompress";
 import morgan from "morgan";
-import cookieSession from "cookie-session";
+
 
 import passport from "passport";
 import cors from "cors";
 import path from "path";
 import expressSession from "express-session"
 import { config } from "./config/config";
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-
+app.use(cookieParser())
 
 app.use(
    expressSession({
@@ -34,6 +35,7 @@ app.use(userRouter);
 
 app.use(cors());
 app.use(compression());
+
 
 // ejs template
 app.set("view engine", "ejs");
