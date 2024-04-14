@@ -4,37 +4,41 @@ import createHttpError from "http-errors";
 import globalErrorHandler from "./middlewares/globalErrorHandler";
 import userRouter from "./routes/user.route";
 import compression from "compression";
-import shouldCompress from "./utils/shouldCompress";
 import morgan from "morgan";
 
 
-import passport from "passport";
+
 import cors from "cors";
 import path from "path";
 import expressSession from "express-session"
 import { config } from "./config/config";
 import cookieParser from "cookie-parser";
 
+
 const app = express();
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(cookieParser())
+app.use(cookieParser());
+
+app.use(cors());
+app.use(compression());
 
 app.use(
    expressSession({
       resave:false,
-      saveUninitialized:true,
-      secret:config.express_session_secret_key
+      saveUninitialized:false,
+      secret:config.express_session_secret_key,name:"Unique😁",
+      cookie: {
+         secure: false, // Set to true if using HTTPS
+         maxAge: 24 * 60 * 60 * 1000, // 1 day
+      },
    })
 )
 
 
-app.use(passport.initialize());
-app.use(passport.session());
 app.use(userRouter);
 
-app.use(cors());
-app.use(compression());
+
 
 
 // ejs template

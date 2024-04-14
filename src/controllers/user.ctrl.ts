@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
 import createHttpError from "http-errors";
-import userModel from "../models/user.model";
+import userModel, { IUser } from "../models/user.model";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
 import path from "path";
+import generateAccessAndRefreshToken from "../utils/generate.utils.tokens";
+import UserModel from "../models/user.model";
 
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -22,14 +24,7 @@ const createUser = expressAsyncHandler(
          const newUser = await userModel.create({ name, email, password });
 
          try {
-            const token = jwt.sign(
-               { sub: newUser._id },
-               config.jwt_secret_key,
-               {
-                  expiresIn: "7d",
-                  algorithm: "HS256",
-               }
-            );
+            const token = newUser.generateAccessToken();
             res.status(201).json({
                success: true,
                accessToken: token,
@@ -40,6 +35,7 @@ const createUser = expressAsyncHandler(
       }
    }
 );
+
 
 const loginUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -63,20 +59,35 @@ const loginUser = expressAsyncHandler(
          }
 
          // Generate a new access token
-         const token = jwt.sign(
-            { sub: user._id },
-            config.jwt_secret_key,
-            {
-               expiresIn: "7d",
-               algorithm: "HS256",
-            }
+         const { accessToken, refreshToken } =
+            await generateAccessAndRefreshToken(user._id);
+
+         const loggedUser = await UserModel.findById(user._id).select(
+            "-password -refreshToken"
          );
 
+         // set to cookies
+         const cookie_options = {
+            httpOnly: true,
+            secure: true,
+         };
+
+         // req.loggedUser = loggedUser;
          // Send the access token in the response
-         res.status(201).json({
-            success: true,
-            accessToken: token,
-         });
+         res.status(201)
+            .cookie("accessToken", accessToken, cookie_options)
+            .cookie("refreshToken", refreshToken, cookie_options)
+            .json({
+               success: true,
+               message: "user loggedIn ",
+               user: {
+                  loggedUser,
+                  accessToken,
+                  refreshToken,
+               },
+            });
+
+
 
       } catch (error: any) {
          // Handle any other errors
@@ -84,6 +95,37 @@ const loginUser = expressAsyncHandler(
       }
    }
 );
+// todo LOGOUT user
 
+const logOutUser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      if (!req.user) {
+         return next(createHttpError(401, "User not logged in"));
+      }
 
-export { createUser, loginUser };
+    const id =  req.user?._id;
+      try {
+         await userModel.findByIdAndUpdate(
+            id,
+            {
+               $set: { refreshToken: undefined },
+            },
+            { new: true }
+         );
+         const cookie_options = {
+            httpOnly: true,
+            secure: true,
+         };
+
+         res.status(200)
+            .clearCookie("accessToken", cookie_options)
+            .clearCookie("refreshToken", cookie_options)
+            .json({ success: true, message: "succcessfully logout" });
+
+         return Promise.resolve();
+      } catch (error) {
+         next(createHttpError(500, "Unable to logout"));
+      }
+   }
+);
+export { createUser, loginUser, logOutUser };

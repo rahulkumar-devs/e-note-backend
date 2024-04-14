@@ -1,26 +1,33 @@
-import express from "express";
-import { createUser, loginUser } from "../controllers/user.ctrl";
-import passport from "passport";
-import { passportCtrl } from "../controllers/passport.ctrl";
+import express, { Request, Response } from "express";
+
+import { createUser, logOutUser, loginUser } from "../controllers/user.ctrl";
+import { isAuthenticate } from "../middlewares/auth.middleware";
+
 
 const userRouter = express.Router();
 
-// Define routes
+
+
+// Route for user registration
 userRouter.route("/register").post(createUser);
 
+// Route for user login
 userRouter.route("/login").post(loginUser);
 
-// Route for initiating Google authentication
-userRouter.get(
-   "/auth/google",
-   passport.authenticate("google", { scope: ["profile", "email"] })
-);
+userRouter.route("/profile").get(isAuthenticate,(req,res)=>{
+   res.send(req.user)
+   
+})
+userRouter.route("/logout").get(isAuthenticate,logOutUser)
+userRouter.route("/").get((req,res)=>{
+console.log(req.session.id,req.session)
 
-userRouter
-   .route("/auth/google/callback")
-   .get(
-      passport.authenticate("google", { failureRedirect: "/login" }),
-      passportCtrl
-   );
+
+
+})
+
+
+
+
 
 export default userRouter;

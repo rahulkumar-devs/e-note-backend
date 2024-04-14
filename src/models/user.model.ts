@@ -1,11 +1,14 @@
-// Make sure to import mongoose correctly
-import mongoose, { Document, Schema, Model } from "mongoose";
+import mongoose, { Document, Schema, Model, ObjectId } from "mongoose";
 import bcrypt from "bcryptjs";
-import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
+import expressAsyncHandler from "express-async-handler";
+
+
+ 
 
 export interface IUser extends Document {
+   googleId:string;
    name: string;
    email: string;
    password: string;
@@ -13,12 +16,16 @@ export interface IUser extends Document {
       public_id: string;
       url: string;
    };
-   isComparePassword(password: string): boolean;
-   generateAccess(password: string): boolean;
+   googleImage:string;
+   refreshToken: string;
+   isComparePassword: (password: string) => boolean;
+   generateAccessToken: () => string;
+   generateRefreshToken: () => string;
 }
 
-const UserSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema<IUser>(
    {
+      googleId:String,
       name: { type: String, required: true },
       email: { type: String, required: true, unique: true },
       password: { type: String },
@@ -26,21 +33,22 @@ const UserSchema = new mongoose.Schema(
          public_id: { type: String },
          url: { type: String },
       },
+      googleImage:String,
+      refreshToken: String
    },
    {
       timestamps: true,
    }
 );
 
-UserSchema.pre<IUser>("save", async function (next) {
+UserSchema.pre<IUser>("save", function (next) {
    try {
       if (this.password && this.isModified("password")) {
          this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(10));
       }
       next();
-   } catch (error: any) {
+   } catch (error:any) {
       console.error("Error occurred during password hashing:", error);
-
       next(error);
    }
 });
@@ -50,7 +58,7 @@ UserSchema.methods.isComparePassword = function (password: string): boolean {
    return isMatched;
 };
 
-UserSchema.methods.generateAccessToken = async function () {
+UserSchema.methods.generateAccessToken = function () {
    return jwt.sign(
       {
          _id: this._id,
@@ -61,7 +69,8 @@ UserSchema.methods.generateAccessToken = async function () {
       { expiresIn: config.access_token_expiry }
    );
 };
-UserSchema.methods.generateRefreshToken = async function () {
+
+UserSchema.methods.generateRefreshToken = function () {
    return jwt.sign(
       {
          _id: this._id,
@@ -71,6 +80,5 @@ UserSchema.methods.generateRefreshToken = async function () {
    );
 };
 
-// Make sure to use mongoose.model, not mongoose.Model
 const UserModel: Model<IUser> = mongoose.model<IUser>("User", UserSchema);
 export default UserModel;
