@@ -10,8 +10,7 @@ import morgan from "morgan";
 
 import cors from "cors";
 import path from "path";
-import expressSession from "express-session"
-import { config } from "./config/config";
+
 import cookieParser from "cookie-parser";
 
 
@@ -23,17 +22,7 @@ app.use(cookieParser());
 app.use(cors());
 app.use(compression());
 
-app.use(
-   expressSession({
-      resave:false,
-      saveUninitialized:false,
-      secret:config.express_session_secret_key,name:"Unique😁",
-      cookie: {
-         secure: false, // Set to true if using HTTPS
-         maxAge: 24 * 60 * 60 * 1000, // 1 day
-      },
-   })
-)
+
 
 
 app.use(userRouter);

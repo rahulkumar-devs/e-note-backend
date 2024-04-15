@@ -8,7 +8,6 @@ import expressAsyncHandler from "express-async-handler";
  
 
 export interface IUser extends Document {
-   googleId:string;
    name: string;
    email: string;
    password: string;
@@ -16,7 +15,6 @@ export interface IUser extends Document {
       public_id: string;
       url: string;
    };
-   googleImage:string;
    refreshToken: string;
    isComparePassword: (password: string) => boolean;
    generateAccessToken: () => string;
@@ -25,7 +23,6 @@ export interface IUser extends Document {
 
 const UserSchema = new mongoose.Schema<IUser>(
    {
-      googleId:String,
       name: { type: String, required: true },
       email: { type: String, required: true, unique: true },
       password: { type: String },
@@ -33,7 +30,7 @@ const UserSchema = new mongoose.Schema<IUser>(
          public_id: { type: String },
          url: { type: String },
       },
-      googleImage:String,
+     
       refreshToken: String
    },
    {

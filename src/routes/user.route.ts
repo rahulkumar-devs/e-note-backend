@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 
-import { createUser, logOutUser, loginUser } from "../controllers/user.ctrl";
-import { isAuthenticate } from "../middlewares/auth.middleware";
+import { createUser } from "../controllers/user.ctrl";
 
 
 const userRouter = express.Router();
@@ -12,19 +11,8 @@ const userRouter = express.Router();
 userRouter.route("/register").post(createUser);
 
 // Route for user login
-userRouter.route("/login").post(loginUser);
-
-userRouter.route("/profile").get(isAuthenticate,(req,res)=>{
-   res.send(req.user)
-   
-})
-userRouter.route("/logout").get(isAuthenticate,logOutUser)
-userRouter.route("/").get((req,res)=>{
-console.log(req.session.id,req.session)
 
 
-
-})
 
 
 
