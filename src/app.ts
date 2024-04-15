@@ -1,3 +1,4 @@
+import  passport  from 'passport';
 import express, { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
 
@@ -12,12 +13,20 @@ import cors from "cors";
 import path from "path";
 
 import cookieParser from "cookie-parser";
+import session from 'express-session';
 
 
 const app = express();
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
+app.use(passport.initialize());
+app.use (passport.session());
+app.use(
+   session({
+      secret:"my-session-secret"
+   })
+)
 
 app.use(cors());
 app.use(compression());

@@ -1,3 +1,4 @@
+import  passport  from 'passport';
 import express, { Request, Response } from "express";
 
 import { createUser } from "../controllers/user.ctrl";
@@ -14,6 +15,16 @@ userRouter.route("/register").post(createUser);
 
 
 
+userRouter.get('/auth/google', passport.authenticate('google', { scope: ['profile',"email"] }));
+
+userRouter.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+
+userRouter.post('/login', passport.authenticate('local', { failureRedirect: '/login', successRedirect: '/' }));
 
 
 
