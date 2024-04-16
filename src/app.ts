@@ -1,58 +1,48 @@
-import  passport  from 'passport';
+
 import express, { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
-
 import globalErrorHandler from "./middlewares/globalErrorHandler";
 import userRouter from "./routes/user.route";
 import compression from "compression";
 import morgan from "morgan";
-
-
-
 import cors from "cors";
 import path from "path";
-
 import cookieParser from "cookie-parser";
-import session from 'express-session';
 
 
 const app = express();
+
+// Body parsing middleware
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(cookieParser());
-app.use(passport.initialize());
-app.use (passport.session());
-app.use(
-   session({
-      secret:"my-session-secret"
-   })
-)
 
+// Cookie parsing middleware
+app.use(cookieParser());
+
+
+// Enable CORS middleware
 app.use(cors());
+
+// Enable gzip compression middleware
 app.use(compression());
 
+// Logging middleware
+app.use(morgan("dev"));
 
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
 
-
+// Set up user routes
 app.use(userRouter);
 
 
-
-
-// ejs template
-app.set("view engine", "ejs");
-app.use(express.static(path.join(__dirname, "public")));
-
-app.use(morgan("dev"));
-
-// Routes
-
+// 404 Route
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
    const err = createHttpError(404, `Route Not Found ${req.originalUrl}`);
    next(err);
 });
 
-// Error handler
+// Error handling middleware
 app.use(globalErrorHandler);
 
 export default app;

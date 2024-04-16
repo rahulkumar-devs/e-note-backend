@@ -2,20 +2,17 @@ import mongoose, { Document, Schema, Model, ObjectId } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
-import expressAsyncHandler from "express-async-handler";
-
-
- 
 
 export interface IUser extends Document {
    name: string;
    email: string;
    password: string;
-   avatar: {
-      public_id: string;
-      url: string;
-   };
-   refreshToken: string;
+   avatar: string;
+   isVerified: boolean;
+   role:[],
+
+   refreshToken:string;
+
    isComparePassword: (password: string) => boolean;
    generateAccessToken: () => string;
    generateRefreshToken: () => string;
@@ -26,12 +23,9 @@ const UserSchema = new mongoose.Schema<IUser>(
       name: { type: String, required: true },
       email: { type: String, required: true, unique: true },
       password: { type: String },
-      avatar: {
-         public_id: { type: String },
-         url: { type: String },
-      },
-     
-      refreshToken: String
+      isVerified: { type: Boolean, default: false },
+      avatar: String,
+      refreshToken:String
    },
    {
       timestamps: true,
@@ -44,7 +38,7 @@ UserSchema.pre<IUser>("save", function (next) {
          this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(10));
       }
       next();
-   } catch (error:any) {
+   } catch (error: any) {
       console.error("Error occurred during password hashing:", error);
       next(error);
    }

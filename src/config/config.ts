@@ -3,6 +3,8 @@ import "dotenv/config";
 // _config make it private
 const _config = {
    port: process.env.PORT,
+   client_url: process.env.CLIENT_URL,
+
    mongoDB_uri: process.env.MONGODB_URI as string,
    env: process.env.NODE_ENV,
    redis_uri: process.env.REDIS_URI,
@@ -21,6 +23,11 @@ const _config = {
    refresh_token_key: process.env.ACCESS_TOKEN_KEY as string,
    access_token_expiry: process.env.REFRESH_TOKEN_EXPIRY as string,
    refresh_token_expiry: process.env.ACCESS_TOKEN_EXPIRY as string,
+
+   // smtp server config
+   smtp_user: process.env.SMTP_USER as string,
+   smtp_host: process.env.SMTP_HOST as string,
+   smtp_password: process.env.SMTP_PASSWORD as string,
 };
 
 // freez _config so that noBody can overWrite
