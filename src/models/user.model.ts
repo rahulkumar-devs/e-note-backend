@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema<IUser>(
       password: { type: String },
       isVerified: { type: Boolean, default: false },
       avatar: String,
-      refreshToken:String
+      refreshToken: { type: String, default: undefined },
    },
    {
       timestamps: true,

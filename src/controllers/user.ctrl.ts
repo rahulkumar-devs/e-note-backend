@@ -2,12 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
 import createHttpError from "http-errors";
 import userModel, { IUser } from "../models/user.model";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "../config/config";
 import UserModel from "../models/user.model";
 import { generateVerificationToken } from "../utils/otp-generator.utils";
 import sendMailer from "../utils/sendMailer.utils";
 import generateTokens from "../utils/generateToken.utils";
+import { isValidObjectId } from "mongoose";
 
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -89,6 +90,86 @@ const userLogin = expressAsyncHandler(
    }
 );
 
+// Logout user
+
+const logoutUser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      const id = req.user?._id;
+      if (!isValidObjectId(id)) {
+         next(createHttpError(400, "not a valid Id"));
+      }
+      await userModel.findByIdAndUpdate(
+         id,
+         { $unset: { refreshToken: "" } },
+         { new: true }
+      );
+      const options = {
+         httpOnly: true,
+         secure: true,
+      };
+      res.status(200)
+         .clearCookie("accessToken", options)
+         .clearCookie("refreshToken", options)
+         .json({
+            success: true,
+            message: "Logout successfully",
+         });
+   }
+);
+
+const refreshAccessToken = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const incomingToken =
+            req.cookies.refreshToken || req.body.refreshToken;
+         
+
+         if (!incomingToken) {
+            return next(createHttpError(401, "Unauthorized user"));
+         }
+
+         // Verify the presence of the incoming token before decoding it
+         const decodeToken = jwt.verify(
+            incomingToken,
+            config.refresh_token_key
+         ) as JwtPayload;
+
+         if (!decodeToken) {
+            return next(createHttpError(401, "Unauthorized user"));
+         }
+
+         const user = await userModel.findById(decodeToken?._id);
+         if (!user) {
+            return next(createHttpError(401, "Invalid refreshToken"));
+         }
+
+         if (user?.refreshToken !== incomingToken) {
+            return next(createHttpError(401, "Refresh Token is Expired or used"));
+         }
+
+         const options = {
+            httpOnly: true,
+            secure: true,
+         };
+
+         const { accessToken, refreshToken } = await generateTokens(user?._id);
+         res.status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json({
+               success: true,
+               user: accessToken,
+               refreshToken,
+               message: "Access token refreshed",
+            });
+      } catch (error) {
+         console.error("Error refreshing access token:", error);
+         next(error);
+      }
+   }
+);
+
+
 // Forgot password
 
 const forgotpassword = expressAsyncHandler(
@@ -136,4 +217,4 @@ const forgotpassword = expressAsyncHandler(
    }
 );
 
-export { createUser, forgotpassword, userLogin };
+export { createUser, forgotpassword, userLogin, logoutUser,refreshAccessToken };

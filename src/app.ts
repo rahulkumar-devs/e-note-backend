@@ -1,4 +1,3 @@
-
 import express, { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
 import globalErrorHandler from "./middlewares/globalErrorHandler";
@@ -9,16 +8,14 @@ import cors from "cors";
 import path from "path";
 import cookieParser from "cookie-parser";
 
-
 const app = express();
-
-// Body parsing middleware
-app.use(express.json({ limit: "16kb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
 // Cookie parsing middleware
 app.use(cookieParser());
 
+// Body parsing middleware
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
 // Enable CORS middleware
 app.use(cors());
@@ -34,7 +31,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Set up user routes
 app.use(userRouter);
-
 
 // 404 Route
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
