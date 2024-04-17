@@ -31,7 +31,7 @@ app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Set up user routes
-app.use(userRouter);
+app.use("/api",userRouter);
 
 // 404 Route
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
