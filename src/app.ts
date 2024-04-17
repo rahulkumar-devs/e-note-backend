@@ -7,6 +7,7 @@ import morgan from "morgan";
 import cors from "cors";
 import path from "path";
 import cookieParser from "cookie-parser";
+import { config } from "./config/config";
 
 const app = express();
 
@@ -18,7 +19,7 @@ app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
 // Enable CORS middleware
-app.use(cors());
+app.use(cors({origin:config.client_url}));
 
 // Enable gzip compression middleware
 app.use(compression());
