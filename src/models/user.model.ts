@@ -9,9 +9,9 @@ export interface IUser extends Document {
    password: string;
    avatar: string;
    isVerified: boolean;
-   role:[],
+   role: "admin" | "user" | "member";
 
-   refreshToken:string;
+   refreshToken: string;
 
    isComparePassword: (password: string) => boolean;
    generateAccessToken: () => string;
@@ -25,6 +25,11 @@ const UserSchema = new mongoose.Schema<IUser>(
       password: { type: String },
       isVerified: { type: Boolean, default: false },
       avatar: String,
+      role: {
+         type: String,
+         default: "user",
+         enum: ["user", "admin", "member"],
+      },
       refreshToken: { type: String, default: undefined },
    },
    {

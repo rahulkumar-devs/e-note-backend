@@ -1,6 +1,6 @@
 import expressAsyncHandler from "express-async-handler";
 import { IUser } from "./user.model";
-import mongoose, { Model } from "mongoose";
+import mongoose, { Model,Types } from "mongoose";
 
 
 
@@ -11,14 +11,16 @@ export interface IFile {
 export interface IBook {
    _id?: string;
    title: string;
-   author: IUser;
+   author: Types.ObjectId; 
    gener: string;
    coverImage: string;
    file: string;
+   thumbnail?:{};
+   like?:Array<string>;
+   dislike:Array<string>;
    createdAt: Date;
    updatedAt: Date;
 }
-
 
 
 

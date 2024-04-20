@@ -34,7 +34,7 @@ const createUser = expressAsyncHandler(
 
             // Generate activation token
             const activationToken = jwt.sign(
-               { name, email, password },
+               { name, email, password, otp },
                config.activate_token_key,
                { expiresIn: "15m" }
             );
@@ -44,7 +44,7 @@ const createUser = expressAsyncHandler(
                email,
                subject: "OTP Verification to Verify Email",
                template: "validMail.ejs",
-               data: { user: { name }, otp ,email},
+               data: { user: { name }, otp, email },
             };
 
             // Send OTP verification email
@@ -60,6 +60,42 @@ const createUser = expressAsyncHandler(
       } catch (error: any) {
          // Handle any errors
          return next(createHttpError(500, error.message));
+      }
+   }
+);
+
+const activateUser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const { activationToken, activationOTP } = req.body;
+
+         const decode = jwt.verify(
+            activationToken as string,
+            config.activate_token_key
+         ) as JwtPayload;
+         const { name, email, password } = decode;
+
+         if (activationOTP !== decode.otp) {
+            return next(createHttpError(400, "this Otp does'nt matched"));
+         }
+
+         const user = await userModel.create({
+            name,
+            email,
+            password,
+            isVerified: true,
+         });
+         if (!user) {
+            return next(createHttpError(500, "user not created"));
+         }
+
+         res.status(200).json({
+            success: true,
+            message: "user created successfully",
+            user,
+         });
+      } catch (error: any) {
+         return next(error.message);
       }
    }
 );
@@ -196,36 +232,109 @@ const forgotpassword = expressAsyncHandler(
             return next(err);
          }
 
+         const user = await userModel.findOne({ email });
+         if (!user) {
+            const err = createHttpError(404, "Email not found");
+            return next(err);
+         }
+
+         // Generate OTP for email verification
+         const otp = generateOTP();
+         // Prepare email data for OTP verification
+
          // Generate a password reset token
-         const resetToken = jwt.sign({ email }, "secret-key", {
-            expiresIn: "1h",
+         const resetToken = jwt.sign({ email, otp }, "secret-key", {
+            expiresIn: 1000 * 50,
          });
+         const otpMailOptions: IEmailOptions = {
+            email,
+            subject: "OTP Verification to reset password",
+            template: "resetPass.ejs",
+            data: { user: { name: user?.name }, otp, email },
+         };
 
-         // Store the token in the user document
-         await UserModel.findOneAndUpdate(
-            { email },
-            {
-               resetPasswordToken: resetToken,
-               resetPasswordExpires: Date.now() + 3600000,
-            } // 1 hour in milliseconds
-         );
-
-         // Send email with password reset link
-
+         // Send OTP verification email
+         await sendMailer(otpMailOptions);
          res.status(200).json({
             success: true,
             message: "Password reset instructions sent to your email.",
+            resetToken,
          });
-      } catch (error) {
-         next(error);
+      } catch (error: any) {
+         next(error.message);
+      }
+   }
+);
+
+// reset password verification and reset password
+
+interface IResetpass {
+   resetToken: string;
+   otp: string;
+}
+
+const verifyResetPassword = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const { resetToken, otp } = req.body as IResetpass;
+
+         const decodeToken = jwt.verify(resetToken, "secret-key") as JwtPayload;
+         if (!decodeToken) {
+            return next(createHttpError(400, "invalid Token"));
+         }
+
+         if (otp !== decodeToken.otp) {
+            return next(createHttpError(400, "invalid Otp"));
+         }
+         res.status(200).json({
+            success: true,
+            message: " Otp successfully verified",
+         });
+      } catch (error: any) {
+         next(error.message);
+      }
+   }
+);
+
+interface IResetBodyPass {
+   password: string;
+   confirmPassword: string;
+}
+const createResetpass = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      const { id } = req.params;
+      console.log(id);
+      const { password, confirmPassword } = req.body as IResetBodyPass;
+      try {
+         if (password !== confirmPassword) {
+            return next(createHttpError(400, "Password not matched"));
+         }
+
+         const user = await userModel.findOne({ _id: id });
+
+         if (!user) {
+            return next(createHttpError(400, "password not updated"));
+         }
+
+         user.password = password;
+         await user.save();
+         res.status(200).json({
+            success: true,
+            message: "Password update successfully",
+         });
+      } catch (error: any) {
+         next(error.message);
       }
    }
 );
 
 export {
    createUser,
-   forgotpassword,
    userLogin,
    logoutUser,
    refreshAccessToken,
+   activateUser,
+   forgotpassword,
+   verifyResetPassword,
+   createResetpass,
 };
