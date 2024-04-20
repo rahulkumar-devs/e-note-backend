@@ -4,6 +4,7 @@ import createHttpError from "http-errors";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "../config/config";
 import UserModel, { IUser } from "../models/user.model";
+import { redis } from "../config/redis.config";
 
 declare global {
    namespace Express {
@@ -30,9 +31,12 @@ const isAuthenticated = expressAsyncHandler(
          ) as JwtPayload;
 
          // Retrieve user data by awaiting UserModel.findById()
-         const user = await UserModel.findById(decodeToken?._id).select(
-            "-refreshToken -password"
-         );
+         // const user = await UserModel.findById(decodeToken?._id).select(
+         //    "-refreshToken -password"
+         // );
+
+         const userString = await redis.get(JSON.parse(decodeToken?.id));
+         const user: IUser = userString ? JSON.parse(userString) : null;
 
          if (!user) {
             return next(createHttpError(401, "Unauthorized user"));
@@ -46,8 +50,5 @@ const isAuthenticated = expressAsyncHandler(
       }
    }
 );
-
-
-
 
 export { isAuthenticated };

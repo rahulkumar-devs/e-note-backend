@@ -9,6 +9,7 @@ import { generateVerificationToken } from "../utils/otp-generator.utils";
 import sendMailer from "../utils/sendMailer.utils";
 import generateTokens from "../utils/generateToken.utils";
 import { isValidObjectId } from "mongoose";
+import { redis } from "../config/redis.config";
 
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -69,6 +70,8 @@ const userLogin = expressAsyncHandler(
             return next(createHttpError(404, "Invalid password"));
 
          const { accessToken, refreshToken } = await generateTokens(user._id);
+
+       await  redis.set(user?._id,JSON.stringify(user))
 
          const options = {
             httpOnly: true,
