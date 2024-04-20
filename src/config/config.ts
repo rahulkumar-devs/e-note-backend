@@ -4,6 +4,7 @@ import "dotenv/config";
 const _config = {
    port: process.env.PORT,
    client_url: process.env.CLIENT_URL,
+   activate_token_key:process.env.ACTIVATE_TOKEN_KEY as string,
 
    mongoDB_uri: process.env.MONGODB_URI as string,
    env: process.env.NODE_ENV,

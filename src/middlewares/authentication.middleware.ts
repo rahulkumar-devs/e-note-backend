@@ -30,20 +30,17 @@ const isAuthenticated = expressAsyncHandler(
             config.access_token_key
          ) as JwtPayload;
 
-         // Retrieve user data by awaiting UserModel.findById()
-         // const user = await UserModel.findById(decodeToken?._id).select(
-         //    "-refreshToken -password"
-         // );
-
-         const userString = await redis.get(JSON.parse(decodeToken?.id));
-         const user: IUser = userString ? JSON.parse(userString) : null;
+         const user = await redis.get(decodeToken?._id);
+       
 
          if (!user) {
-            return next(createHttpError(401, "Unauthorized user"));
+            return next(
+               createHttpError(401, "Unauthorized user user not found")
+            );
          }
 
          // Now user contains the user data, set it to req.user
-         req.user = user;
+         req.user = JSON.parse(user);
          next();
       } catch (error) {
          next(error);

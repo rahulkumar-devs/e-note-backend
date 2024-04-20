@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 5px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      max-width: 150px;
+    }
+    .message {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .otp-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .otp {
+      font-size: 24px;
+      font-weight: bold;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+    .note {
+      font-size: 14px;
+      color: #888888;
+    }
+    .quote {
+      margin-top: 20px;
+      text-align: center;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="" alt="Your Company Logo">
+    </div>
+    <div class="message">
+      <h2>Verify Your Email Address</h2>
+      <p>Hello <%= user.name %>,</p>
+      <p>Please use the OTP below to verify your email address (<%= email %>). </p>
+    </div>
+    <div class="otp-container">
+      <div class="otp"><%= otp %></div>
+      <div class="note">Note: This OTP is valid for a single use only.</div>
+    </div>
+    <div class="quote">
+      <p>"The journey of a thousand miles begins with one step." - Lao Tzu</p>
+      <p>"Believe you can and you're halfway there." - Theodore Roosevelt</p>
+      <p>"Success is not final, failure is not fatal: It is the courage to continue that counts." - Winston Churchill</p>
+    </div>
+  </div>
+</body>
+</html>

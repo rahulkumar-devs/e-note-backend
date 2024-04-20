@@ -30,6 +30,7 @@ app.use(morgan("dev"));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs");
 
 // Set up user routes
 app.use("/api",userRouter,booksRoute);

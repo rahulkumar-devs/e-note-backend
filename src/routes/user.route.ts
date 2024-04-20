@@ -1,7 +1,7 @@
 import express from "express";
 
 import { createUser, userLogin, logoutUser, refreshAccessToken } from "../controllers/user.ctrl";
-import { sendOtp } from "../controllers/otp.ctrl";
+
 import { isAuthenticated } from "../middlewares/authentication.middleware";
 
 const userRouter = express.Router();
@@ -13,7 +13,6 @@ userRouter.route("/login").post(userLogin);
 userRouter.route("/refresh").post(isAuthenticated,refreshAccessToken)
 userRouter.route("/logout").get(isAuthenticated,logoutUser);
 
-userRouter.route("/send-otp").post(sendOtp);
 
 // Some Functionality
 

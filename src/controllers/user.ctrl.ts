@@ -2,11 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
 import createHttpError from "http-errors";
 import userModel, { IUser } from "../models/user.model";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { config } from "../config/config";
 import UserModel from "../models/user.model";
-import { generateVerificationToken } from "../utils/otp-generator.utils";
-import sendMailer from "../utils/sendMailer.utils";
+import generateOTP, {
+   generateVerificationToken,
+} from "../utils/otp-generator.utils";
+import sendMailer, { IEmailOptions } from "../utils/sendMailer.utils";
 import generateTokens from "../utils/generateToken.utils";
 import { isValidObjectId } from "mongoose";
 import { redis } from "../config/redis.config";
@@ -14,43 +16,50 @@ import { redis } from "../config/redis.config";
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       const { name, email, password } = req.body;
+
+      // Check if all required fields are present
       if (!name || !email || !password) {
          const err = createHttpError(400, "All fields are required");
          return next(err);
       }
 
-      const user = await userModel.findOne({ email });
+      try {
+         // Check if user with given email already exists
+         const existingUser = await userModel.findOne({ email });
+         if (existingUser) {
+            return next(createHttpError(400, "User already exists"));
+         } else {
+            // Generate OTP for email verification
+            const otp = generateOTP();
 
-      const verificationLink = `${config.client_url}/verify?id=${user?._id}`;
+            // Generate activation token
+            const activationToken = jwt.sign(
+               { name, email, password },
+               config.activate_token_key,
+               { expiresIn: "15m" }
+            );
 
-      // Send verification email
-      await sendMailer({
-         from: config.smtp_user,
-         to: email,
-         subject: `User Verification ${email}`,
-         html: `
-         <p>
-         Verify your account 
-         <a href="${verificationLink}" style="color: #007bff; text-decoration: none; border-bottom: 1px dotted #007bff;">Verify your account</a>
-         </p>
-         `,
-      });
+            // Prepare email data for OTP verification
+            const otpMailOptions: IEmailOptions = {
+               email,
+               subject: "OTP Verification to Verify Email",
+               template: "validMail.ejs",
+               data: { user: { name }, otp ,email},
+            };
 
-      if (user) {
-         const err = createHttpError(400, `User already exists with ${email}`);
-         return next(err);
-      } else {
-         const newUser = await userModel.create({ name, email, password });
+            // Send OTP verification email
+            await sendMailer(otpMailOptions);
 
-         try {
-            const token = newUser.generateAccessToken();
-            res.status(201).json({
+            // Respond with success message and activation token
+            res.status(200).json({
                success: true,
-               accessToken: token,
+               message: `Check your email ${email} for verification`,
+               activationToken,
             });
-         } catch (error) {
-            next(createHttpError(500, "Error while signing JWT token"));
          }
+      } catch (error: any) {
+         // Handle any errors
+         return next(createHttpError(500, error.message));
       }
    }
 );
@@ -71,7 +80,7 @@ const userLogin = expressAsyncHandler(
 
          const { accessToken, refreshToken } = await generateTokens(user._id);
 
-       await  redis.set(user?._id,JSON.stringify(user))
+         await redis.set(user?._id, JSON.stringify(user));
 
          const options = {
             httpOnly: true,
@@ -110,6 +119,9 @@ const logoutUser = expressAsyncHandler(
          httpOnly: true,
          secure: true,
       };
+
+      await redis.del(req.user?._id);
+
       res.status(200)
          .clearCookie("accessToken", options)
          .clearCookie("refreshToken", options)
@@ -125,7 +137,6 @@ const refreshAccessToken = expressAsyncHandler(
       try {
          const incomingToken =
             req.cookies.refreshToken || req.body.refreshToken;
-         
 
          if (!incomingToken) {
             return next(createHttpError(401, "Unauthorized user"));
@@ -147,7 +158,9 @@ const refreshAccessToken = expressAsyncHandler(
          }
 
          if (user?.refreshToken !== incomingToken) {
-            return next(createHttpError(401, "Refresh Token is Expired or used"));
+            return next(
+               createHttpError(401, "Refresh Token is Expired or used")
+            );
          }
 
          const options = {
@@ -171,7 +184,6 @@ const refreshAccessToken = expressAsyncHandler(
       }
    }
 );
-
 
 // Forgot password
 
@@ -199,16 +211,6 @@ const forgotpassword = expressAsyncHandler(
          );
 
          // Send email with password reset link
-         const resetLink = `${config.client_url}/reset-password/${resetToken}`;
-         await sendMailer(
-            {
-               from: config.smtp_user,
-               to: email,
-               subject: "Password Reset",
-               html: `Please click <a href="${resetLink}">here</a> to reset your password.`,
-            },
-            "123"
-         );
 
          res.status(200).json({
             success: true,
@@ -220,4 +222,10 @@ const forgotpassword = expressAsyncHandler(
    }
 );
 
-export { createUser, forgotpassword, userLogin, logoutUser,refreshAccessToken };
+export {
+   createUser,
+   forgotpassword,
+   userLogin,
+   logoutUser,
+   refreshAccessToken,
+};
