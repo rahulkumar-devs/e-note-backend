@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express from "express";
 
 import { createUser, userLogin, logoutUser, refreshAccessToken } from "../controllers/user.ctrl";
 import { sendOtp } from "../controllers/otp.ctrl";

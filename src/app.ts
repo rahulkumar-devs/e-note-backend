@@ -1,13 +1,14 @@
 import express, { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
 import globalErrorHandler from "./middlewares/globalErrorHandler";
-import userRouter from "./routes/user.route";
 import compression from "compression";
 import morgan from "morgan";
 import cors from "cors";
 import path from "path";
 import cookieParser from "cookie-parser";
 import { config } from "./config/config";
+import booksRoute from "./routes/books.route";
+import userRouter from "./routes/user.route";
 
 const app = express();
 
@@ -31,7 +32,7 @@ app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Set up user routes
-app.use("/api",userRouter);
+app.use("/api",userRouter,booksRoute);
 
 // 404 Route
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
