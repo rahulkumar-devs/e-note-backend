@@ -9,7 +9,7 @@ export interface IUser extends Document {
    password: string;
    avatar: string;
    isVerified: boolean;
-   role: "admin" | "user" | "member";
+   role: ("admin" | "user" | "member")[];
 
    refreshToken: string;
 
@@ -26,9 +26,9 @@ const UserSchema = new mongoose.Schema<IUser>(
       isVerified: { type: Boolean, default: false },
       avatar: String,
       role: {
-         type: String,
-         default: "user",
-         enum: ["user", "admin", "member"],
+         type: [String],
+         default: ["user"],
+         enum: ["user", "admin", "mentor"],
       },
       refreshToken: { type: String, default: undefined },
    },
