@@ -9,13 +9,14 @@ export interface IBook {
    title: string;
    author: Types.ObjectId;
    gener: string;
-   coverImage: Array<{ public_id: string; url: string }>;
-   pdf_file: Array<{ public_id: string; url: string }>;
+   coverImage: { public_id: string; url: string };
+   pdf_file: { public_id: string; url: string };
    file: Array<{ public_id: string; url: string }>;
+   descriptions?:string;
    like?: Array<string>;
-   dislike: Array<string>;
-   createdAt: Date;
-   updatedAt: Date;
+   dislike?: Array<string>;
+   createdAt?: Date;
+   updatedAt?: Date;
 }
 
 const bookSchema = new mongoose.Schema<IBook>(
@@ -28,12 +29,14 @@ const bookSchema = new mongoose.Schema<IBook>(
       },
       gener: { type: String },
       coverImage: [{ public_id: String, url: String }],
-      pdf_file:[{ public_id: String, url: String }],
+      pdf_file: [{ public_id: String, url: String }],
       file: [{ public_id: String, url: String }],
+      descriptions:String,
       createdAt: {
          type: Date,
+         default: Date.now(),
       },
-      updatedAt: { type: Date },
+      updatedAt: { type: Date, default: Date.now() },
    },
    { timestamps: true }
 );

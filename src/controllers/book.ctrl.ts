@@ -1,11 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
-import cloudinary from "../config/cloudinary.config";
 import path from "node:path";
-import fs from "node:fs";
-import createHttpError from "http-errors";
 import bookModel, { IBook } from "../models/book.model";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
+import createHttpError from "http-errors";
 
 export const createBook = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -13,84 +11,89 @@ export const createBook = expressAsyncHandler(
          [fieldname: string]: Express.Multer.File[];
       };
 
-      // Upload cover images
 
-      const coverImageUploads = await Promise.all(
-         (files.coverImage || []).map(async (coverImageFile) => {
-            const coverImgPath = path.join(
-               __dirname,
-               "../../public/data",
-               coverImageFile.filename
-            );
-            const format = coverImageFile.mimetype.split("/")[1]; // Get format from mimetype
-            return await uploadToCloudinary(
-               coverImgPath,
-               "coverImage",
-               coverImageFile.filename,
-               format
-            );
-         })
-      );
 
-      // Upload PDF files
-      const pdfFileUploads = files.pdf_file
-         ? await Promise.all(
-              files.pdf_file.map(async (pdfFile) => {
-                 const pdfFilePath = path.join(
-                    __dirname,
-                    "../../public/data",
-                    pdfFile.filename
-                 );
-                 const format = pdfFile.mimetype.split("/")[1];
-                 return await uploadToCloudinary(
-                    pdfFilePath,
-                    "pdf_file",
-                    pdfFile.filename,
-                    format
-                 );
-              })
-           )
-         : [];
+      try {
+         // Upload Cover Image
+         const coverImage = files.coverImage[0];
+         const coverImagePath = path.resolve(
+            __dirname,
+            "../../public/data",
+            coverImage.filename
+         );
+         const coverImageFormat = coverImage.mimetype.split("/")[1];
+         const resultCoverImage = await uploadToCloudinary(
+            coverImagePath,
+            "coverImage",
+            coverImage.filename,
+            coverImageFormat
+         );
 
-      const imageFiles = await Promise.all(
-         (files.file || []).map(async (imageFile) => {
-            const imageFilePath = path.join(
-               __dirname,
-               "../../public/data",
-               imageFile.filename
-            );
-            const format = imageFile.mimetype.split("/")[1];
-            return await uploadToCloudinary(
-               imageFilePath,
-               "imageFiles",
-               imageFile.filename,
-               format
-            );
-         })
-      );
+         // Upload PDF File
+         const pdfFile = files.pdf_file[0];
+         const pdfFilePath = path.resolve(
+            __dirname,
+            "../../public/data",
+            pdfFile.filename
+         );
+         const pdfFileFormat = pdfFile.mimetype.split("/")[1];
+         const resultPdf = await uploadToCloudinary(
+            pdfFilePath,
+            "pdf_file",
+            pdfFile.filename,
+            pdfFileFormat
+         );
 
-      // Create book object
-      const newBook = {
-         title: req.body.title,
-         author: req.user?._id,
-         gener: req.body.gener,
-         coverImage: coverImageUploads.map((upload) => ({
-            public_id: upload.public_id,
-            url: upload.url,
-         })),
-         pdf_file: pdfFileUploads.map((upload) => ({
-            public_id: upload.public_id,
-            url: upload.url,
-         })),
-         file: imageFiles.map((upload) => ({
-            public_id: upload.public_id,
-            url: upload.url,
-         })),
-      };
+         // Upload Image Files
+         const imageFiles = await Promise.all(
+            (files.file || []).map(async (imageFile) => {
+               const imageFilePath = path.resolve(
+                  __dirname,
+                  "../../public/data",
+                  imageFile.filename
+               );
+               const imageFileFormat = imageFile.mimetype.split("/")[1];
+               return await uploadToCloudinary(
+                  imageFilePath,
+                  "imageFiles",
+                  imageFile.filename,
+                  imageFileFormat
+               );
+            })
+         );
 
-      await bookModel.create(newBook);
+         // Create book object
+         const newBook: IBook = {
+            title: req.body.title,
+            author: req.user?._id,
+            gener: req.body.gener,
+            coverImage: {
+               public_id: resultCoverImage.public_id,
+               url: resultCoverImage.url,
+            },
+            pdf_file: {
+               public_id: resultPdf.public_id,
+               url: resultPdf.url,
+            },
+            file: imageFiles.map((file) => ({
+               public_id: file.public_id,
+               url: file.url,
+            })),
+            descriptions: req.body.descriptions,
+         };
 
-      // Respond with success message
-      res.status(200).json({ success: true });
+         // Save book to database
+         const createdBook = await bookModel.create(newBook);
+
+         // Respond with success message
+         res.status(200).json({
+            success: true,
+            message: "Book successfully created",
+            book: createdBook,
+         });
+      } catch (error: any) {
+         console.log(error)
+         next(error.message);
+      }
    }
 );
