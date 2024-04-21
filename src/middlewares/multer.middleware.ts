@@ -1,7 +1,8 @@
-import multer from "multer";
+import multer, { MulterError } from "multer";
 import fs from "node:fs";
 import path from "node:path";
-
+import {Request,Response,NextFunction} from "express"
+import createHttpError from "http-errors";
 /**
  * Generates a unique filename for the uploaded file.
  *
@@ -34,9 +35,14 @@ const storage = multer.diskStorage({
    },
 
    filename: function (req, file, cb) {
-      cb(null, file.fieldname + path.extname(file.originalname));
+      cb(null, Date.now()+"-"+file.originalname );
    },
 });
 
-const upload = multer({ storage: storage, limits: { fieldNameSize: 3e7 } });
+const upload = multer({
+   storage: storage,
+   limits: { fieldNameSize: 1024 * 1024 * 10 },
+});
+
+
 export default upload;
