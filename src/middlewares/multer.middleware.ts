@@ -1,4 +1,5 @@
 import multer from "multer";
+import fs from "node:fs";
 import path from "node:path";
 
 /**
@@ -22,12 +23,18 @@ import path from "node:path";
 const storage = multer.diskStorage({
    destination: function (req, file, cb) {
       const filePath: string = path.resolve(__dirname, "../../public/data");
+      if (!fs.existsSync(filePath)) {
+         fs.mkdir(filePath, { recursive: true }, (err) => {
+            if (err) {
+               console.log("directory doesn't exist");
+            }
+         });
+      }
       cb(null, filePath);
    },
 
    filename: function (req, file, cb) {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, file.fieldname + "-" + uniqueSuffix);
+      cb(null, file.fieldname + path.extname(file.originalname));
    },
 });
 
