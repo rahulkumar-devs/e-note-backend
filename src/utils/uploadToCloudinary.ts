@@ -3,12 +3,14 @@ import cloudinary from "../config/cloudinary.config";
 
 
 // Function to upload file to Cloudinary and delete local file
+
+
 export const uploadToCloudinary = async (
    filePath: string,
    folder: string,
    filename: string,
    format: string
-) => {
+):Promise<{public_id:string,url:string,size:number,width:number,height:number,formate:string,resource_type:string} >=> {
    try {
       const uploadResult = await cloudinary.uploader.upload(filePath, {
          folder,
@@ -26,7 +28,14 @@ export const uploadToCloudinary = async (
             );
          }
       });
-      return uploadResult;
+      return {
+        public_id:uploadResult.public_id,
+        url:uploadResult.secure_url,size:uploadResult.bytes,
+        width:uploadResult.width,
+        height:uploadResult.height,
+        formate:uploadResult.format,
+        resource_type:uploadResult.resource_type
+      };
    } catch (error) {
       fs.unlinkSync(filePath);
       console.error(`Error uploading file to Cloudinary: ${filename}`, error);

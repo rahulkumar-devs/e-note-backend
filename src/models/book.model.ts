@@ -9,9 +9,9 @@ export interface IBook {
    title: string;
    author: Types.ObjectId;
    gener: string;
-   coverImage: string;
-   file: string;
-   thumbnail?: {};
+   coverImage: Array<{ public_id: string; url: string }>;
+   pdf_file: Array<{ public_id: string; url: string }>;
+   file: Array<{ public_id: string; url: string }>;
    like?: Array<string>;
    dislike: Array<string>;
    createdAt: Date;
@@ -27,8 +27,9 @@ const bookSchema = new mongoose.Schema<IBook>(
          required: true,
       },
       gener: { type: String },
-      coverImage: { type: String },
-      file: { type: String },
+      coverImage: [{ public_id: String, url: String }],
+      pdf_file:[{ public_id: String, url: String }],
+      file: [{ public_id: String, url: String }],
       createdAt: {
          type: Date,
       },
