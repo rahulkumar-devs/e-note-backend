@@ -1,28 +1,26 @@
 import { NextFunction, Request, Response } from "express";
 import createHttpError from "http-errors";
 
+
 /**
- * Middleware function to check if the user has the required role to access the account.
+ * Middleware function to check if the user has admin privileges.
  *
- * @param {string} role - The required role for accessing the account.
- * @param {Request} req - The request object.
- * @param {Response} res - The response object.
- * @param {NextFunction} next - The next function to be called.
- * @return {void} - This function does not return anything.
+ * @param {...string[]} roles - The roles to check against the user's role.
+ * @return {function} - The middleware function.
  */
 
-
-
-export const isAdmin = (role: string) => {
+export const restrict = (...roles: string[]) => {
    return (req: Request, res: Response, next: NextFunction) => {
-      if (req?.user?.role !== role) {
+      const { user } = req;
+      if (!user || !user.role || !user.role.some((r) => roles.includes(r))) {
          return next(
             createHttpError(
                403,
-               "you have no permission to access this account"
+               "You have no permission to access this account"
             )
          );
       }
       next();
    };
 };
+
