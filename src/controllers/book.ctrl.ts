@@ -245,7 +245,7 @@ export const readAllBooks = expressAsyncHandler(
          const skipIndex = (page - 1) * limit;
 
          // Query to fetch paginated results
-         const allBooks = await bookModel.find().skip(skipIndex).limit(limit);
+         const allBooks = await bookModel.find().skip(skipIndex).limit(limit).populate("author","name email")
 
          // Response with paginated data
          res.status(200).json({
@@ -312,3 +312,23 @@ export const deleteSpecificFile = expressAsyncHandler(
       }
    }
 );
+
+
+export const singleBook =expressAsyncHandler(
+   async(req: Request, res: Response, next: NextFunction)=>{
+      try {
+         
+         const id = req.params.id;
+         const book =await bookModel.findById(id);
+         res.status(200).json({
+            success:true,
+            message:`${id} book found`,
+            book
+         })
+      } catch (error:any) {
+         next(createHttpError(500,error.message))
+      }
+   }
+)
+
+// get single book or pdf
