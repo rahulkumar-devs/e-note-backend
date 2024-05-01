@@ -10,16 +10,16 @@ booksRoute.route("/create-book").post(
    isAuthenticated,
    upload.fields([
       { name: "coverImage", maxCount: 1 },
-      { name: "pdf_file", maxCount: 10 },
+      { name: "pdf_file", maxCount: 2 },
       { name: "imageFiles", maxCount: 100 },
    ]),
    createBook
 );
-booksRoute.route("/updatee-book/:id").post(
+booksRoute.route("/update-book/:id").post(
    isAuthenticated,
    upload.fields([
       { name: "coverImage", maxCount: 1 },
-      { name: "pdf_file", maxCount: 10 },
+      { name: "pdf_file", maxCount: 2 },
       { name: "imageFiles", maxCount: 100 },
    ]),
    updateBook
@@ -29,7 +29,7 @@ booksRoute
    .get(  readAllBooks);
 
    booksRoute.route('/books/:book_id/files/:file_id').put(isAuthenticated,deleteSpecificFile);
-   booksRoute.route("/book/:id").get(isAuthenticated,singleBook)
+   booksRoute.route("/book/:id").get(singleBook)
 
 
 export default booksRoute;

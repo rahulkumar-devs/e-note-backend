@@ -109,6 +109,7 @@ export const updateBook = expressAsyncHandler(
 
          // Handle cover image update
          const coverImage = files.coverImage?.[0];
+
          if (coverImage) {
             // Delete existing cover image
             if (book.coverImage && book.coverImage.public_id) {
@@ -130,61 +131,59 @@ export const updateBook = expressAsyncHandler(
 
          // Handle PDF files update
          const pdfFiles = files.pdf_file || [];
-         const existingPdfIds = book.pdf_file.map((pdf) => pdf.public_id);
+         if (pdfFiles.length > 0) {
+            // Delete existing PDF files
+            await Promise.all(
+               book.pdf_file.map(async (pdf) => {
+                  await deleteToCloudinary(pdf.public_id);
+               })
+            );
 
-         // Delete existing PDF files
-         await Promise.all(
-            existingPdfIds.map(async (public_id) => {
-               await deleteToCloudinary(public_id);
-            })
-         );
+            // Upload new PDF files
+            const resultPdf = await Promise.all(
+               pdfFiles.map(async (pdfFile) => {
+                  const pdf_result = await uploadFileToCloudinary(
+                     pdfFile,
+                     "pdf_file"
+                  );
+                  return {
+                     public_id: pdf_result.public_id,
+                     url: pdf_result.url,
+                  };
+               })
+            );
 
-         // Upload new PDF files
-         const resultPdf = await Promise.all(
-            pdfFiles.map(async (pdfFile) => {
-               const pdf_result = await uploadFileToCloudinary(
-                  pdfFile,
-                  "pdf_file"
-               );
-               return {
-                  public_id: pdf_result.public_id,
-                  url: pdf_result.url,
-               };
-            })
-         );
+            // Update book's PDF files
+            book.pdf_file = resultPdf;
+         }
 
-         // Update book's PDF files
-         book.pdf_file = resultPdf;
-
-         // Handle image files update (assuming imageFiles property exists)
+         // Handle image files update
          const imageFiles = files.imageFiles || [];
-         const existingImageFileIds = book.imageFiles.map(
-            (img_file) => img_file.public_id
-         );
+         if (imageFiles.length > 0) {
+            // Delete existing image files
+            await Promise.all(
+               book.imageFiles.map(async (imgFile) => {
+                  await deleteToCloudinary(imgFile.public_id);
+               })
+            );
 
-         // Delete existing image files
-         await Promise.all(
-            existingImageFileIds.map(async (public_id) => {
-               await deleteToCloudinary(public_id);
-            })
-         );
+            // Upload new image files
+            const resultImageFiles = await Promise.all(
+               imageFiles.map(async (imageFile) => {
+                  const img_result = await uploadFileToCloudinary(
+                     imageFile,
+                     "image_file"
+                  );
+                  return {
+                     public_id: img_result.public_id,
+                     url: img_result.url,
+                  };
+               })
+            );
 
-         // Upload new image files
-         const resultImageFiles = await Promise.all(
-            imageFiles.map(async (imageFile) => {
-               const img_result = await uploadFileToCloudinary(
-                  imageFile,
-                  "image_file"
-               );
-               return {
-                  public_id: img_result.public_id,
-                  url: img_result.url,
-               };
-            })
-         );
-
-         // Update book's image files
-         book.imageFiles = resultImageFiles;
+            // Update book's image files
+            book.imageFiles = resultImageFiles;
+         }
 
          // Save the updated book
          await book.save();
@@ -245,7 +244,11 @@ export const readAllBooks = expressAsyncHandler(
          const skipIndex = (page - 1) * limit;
 
          // Query to fetch paginated results
-         const allBooks = await bookModel.find().skip(skipIndex).limit(limit).populate("author","name email")
+         const allBooks = await bookModel
+            .find()
+            .skip(skipIndex)
+            .limit(limit)
+            .populate("author", "name email");
 
          // Response with paginated data
          res.status(200).json({
@@ -283,12 +286,11 @@ export const deleteSpecificFile = expressAsyncHandler(
          }
 
          if (book.pdf_file && book.pdf_file.length > 0) {
-          await bookModel.findByIdAndUpdate(
+            await bookModel.findByIdAndUpdate(
                { _id: book_id },
                { $pull: { pdf_file: { _id: file_id } } },
                { new: true }
             );
-           
          }
 
          if (book.imageFiles && book.imageFiles.length > 0) {
@@ -313,22 +315,20 @@ export const deleteSpecificFile = expressAsyncHandler(
    }
 );
 
-
-export const singleBook =expressAsyncHandler(
-   async(req: Request, res: Response, next: NextFunction)=>{
+export const singleBook = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
       try {
-         
          const id = req.params.id;
-         const book =await bookModel.findById(id);
+         const book = await bookModel.findById(id);
          res.status(200).json({
-            success:true,
-            message:`${id} book found`,
-            book
-         })
-      } catch (error:any) {
-         next(createHttpError(500,error.message))
+            success: true,
+            message: `${id} book found`,
+            book,
+         });
+      } catch (error: any) {
+         next(createHttpError(500, error.message));
       }
    }
-)
+);
 
 // get single book or pdf
