@@ -13,7 +13,8 @@ export interface IBook {
    pdf_file: { public_id: string; url: string }[];
    imageFiles:{ public_id: string; url: string }[];
    descriptions?:string;
-   like?: Array<string>;
+   like?: IUser["_id"];
+   views:number;
    dislike?: Array<string>;
    createdAt?: Date;
    updatedAt?: Date;
