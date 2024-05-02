@@ -11,7 +11,6 @@ import generateOTP, {
 import sendMailer, { IEmailOptions } from "../utils/sendMailer.utils";
 import generateTokens from "../utils/generateToken.utils";
 import { isValidObjectId } from "mongoose";
-import { redis } from "../config/redis.config";
 
 const createUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -116,7 +115,7 @@ const userLogin = expressAsyncHandler(
 
          const { accessToken, refreshToken } = await generateTokens(user._id);
 
-         await redis.set(user?._id, JSON.stringify(user));
+         // await redis.set(user?._id, JSON.stringify(user));
 
          const options = {
             httpOnly: true,
@@ -156,7 +155,7 @@ const logoutUser = expressAsyncHandler(
          secure: true,
       };
 
-      await redis.del(req.user?._id);
+      // await redis.del(req.user?._id);
 
       res.status(200)
          .clearCookie("accessToken", options)
