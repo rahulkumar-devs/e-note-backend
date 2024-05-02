@@ -4,7 +4,6 @@ import createHttpError from "http-errors";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "../config/config";
 import UserModel, { IUser } from "../models/user.model";
-import { redis } from "../config/redis.config";
 
 declare global {
    namespace Express {
@@ -30,7 +29,7 @@ const isAuthenticated = expressAsyncHandler(
             config.access_token_key
          ) as JwtPayload;
 
-         const user = await redis.get(decodeToken?._id);
+         const user = await UserModel.findById(decodeToken?._id)
        
 
          if (!user) {
@@ -40,7 +39,7 @@ const isAuthenticated = expressAsyncHandler(
          }
 
          // Now user contains the user data, set it to req.user
-         req.user = JSON.parse(user);
+         req.user =user;
          next();
       } catch (error) {
          next(error);
