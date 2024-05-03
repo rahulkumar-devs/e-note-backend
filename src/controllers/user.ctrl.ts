@@ -99,6 +99,32 @@ const activateUser = expressAsyncHandler(
    }
 );
 
+// <== Update user
+const updateUser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const id = req.params.id;
+         const { name, avatar } = req.body;
+
+         if (!isValidObjectId(id)) {
+            next(createHttpError("Not a valid Id"));
+         }
+
+         const user = await userModel.findByIdAndUpdate(id, { name, avatar });
+         if (!user) {
+            next(createHttpError("User not found"));
+         }
+
+         res.status(200).json({
+            success: true,
+            message: "Profile Updated",
+         });
+      } catch (error: any) {
+         next(createHttpError(500, error.message));
+      }
+   }
+);
+
 // User login
 
 const userLogin = expressAsyncHandler(
@@ -327,6 +353,34 @@ const createResetpass = expressAsyncHandler(
    }
 );
 
+// get all user list
+// For admin
+const getAlluser = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const page = parseInt(req.query.page as string) || 1;
+         const limit = parseInt(req.query.page as string) || 10;
+
+         const skipIndex = (page - 1) * limit;
+
+         const users = await userModel.find().skip(skipIndex).limit(limit);
+         // .populate("blogs","title ");
+
+         res.status(200).json({
+            success: true,
+            message: "Books successfully retrieved",
+            page: page,
+            limit: limit,
+            totalBooks: users.length, // Total number of books on this page
+            totalPages: Math.ceil(users.length / limit), // Total number of pages
+            users,
+         });
+      } catch (error: any) {
+         next(createHttpError(500, error.message));
+      }
+   }
+);
+
 export {
    createUser,
    userLogin,
@@ -336,4 +390,5 @@ export {
    forgotpassword,
    verifyResetPassword,
    createResetpass,
+   updateUser,
 };

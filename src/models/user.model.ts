@@ -1,7 +1,8 @@
-import mongoose, { Document, Schema, Model, ObjectId } from "mongoose";
+import mongoose, { Document, Schema, Model, ObjectId, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
+import { IPost } from "./articles/blog.model";
 
 export interface IUser extends Document {
 _id?:string;
@@ -9,6 +10,8 @@ _id?:string;
    email: string;
    password: string;
    avatar: string;
+   blogs:IPost["_id"];
+ 
    isVerified: boolean;
    role: ("admin" | "user" | "member")[];
 
@@ -26,12 +29,13 @@ const UserSchema = new mongoose.Schema<IUser>(
       email: { type: String, required: true, unique: true },
       password: { type: String },
       isVerified: { type: Boolean, default: false },
-      avatar: String,
+      avatar:{type:String},
       role: {
          type: [String],
          default: ["user"],
          enum: ["user", "admin", "mentor"],
       },
+      blogs:{ type: Schema.Types.ObjectId, ref: "Post", required: true },
       refreshToken: { type: String, default: undefined },
    },
    {
