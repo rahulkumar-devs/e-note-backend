@@ -46,6 +46,6 @@ const upload = multer({
    storage: storage,
    limits: { fieldNameSize: 1024 * 1024 * 10 },
 });
-
+ 
 
 export default upload;

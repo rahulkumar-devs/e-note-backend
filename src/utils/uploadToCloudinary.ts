@@ -8,46 +8,36 @@ interface ICloudinaryUpload {
 }
 
 // Maintain a list of uploaded file names
-const uploadedFiles: string[] = [];
 
 export const uploadFileToCloudinary = async (
    file: Express.Multer.File,
    folder: string
 ): Promise<ICloudinaryUpload> => {
    const fileName = file.filename;
-   const filePath = path.resolve(__dirname, "../../public/data", fileName);
+   // const filePath = path.resolve(__dirname, "../../public/data", fileName);
 
    try {
       // Check if the file has already been uploaded
-      if (uploadedFiles.includes(fileName)) {
-         throw new Error(`File '${fileName}' has already been uploaded`);
-      }
-
-      // Upload file to Cloudinary
-      const uploadResult = await cloudinary.uploader.upload(filePath, {
+      const uploadResult = await cloudinary.uploader.upload(file.path, {
          folder,
-         quality_analysis: true,
       });
 
-      // Add the uploaded file name to the list
-      uploadedFiles.push(fileName);
-
       // Delete local file after successful upload
-      if (fs.existsSync(filePath)) {
-         fs.unlinkSync(filePath);
-      }
+     fs.unlinkSync(file.path)
 
+   
       // Return upload result
       const cloudinaryUpload: ICloudinaryUpload = {
          public_id: uploadResult.public_id,
          url: uploadResult.secure_url,
       };
-
+ 
       return cloudinaryUpload;
    } catch (error) {
       // Delete local file in case of upload failure
-      if (fs.existsSync(filePath)) {
-         fs.unlinkSync(filePath);
+      if (fs.existsSync(file.path)) {
+         fs.unlinkSync(file.path)
+
       }
 
       console.error(`Error uploading file to Cloudinary: ${fileName}`, error);

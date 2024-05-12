@@ -16,12 +16,15 @@ declare global {
 const isAuthenticated = expressAsyncHandler(
    async (req: Request, _, next: NextFunction) => {
       try {
+         
          const tokens =
             req.cookies?.accessToken ||
             req.header("authorization")?.replace("Bearer", "");
 
+          
+
          if (!tokens) {
-            return next(createHttpError(401, "Unauthorized request"));
+            return next(createHttpError(401, "Token Expired "));
          }
 
          const decodeToken = jwt.verify(
@@ -29,7 +32,7 @@ const isAuthenticated = expressAsyncHandler(
             config.access_token_key
          ) as JwtPayload;
 
-         const user = await UserModel.findById(decodeToken?._id)
+         const user = await UserModel.findById(decodeToken?._id).select("-password -refreshToken")
        
 
          if (!user) {

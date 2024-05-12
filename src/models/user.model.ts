@@ -10,7 +10,7 @@ _id?:string;
    email: string;
    password: string;
    avatar: string;
-   blogs:IPost["_id"];
+   blogs?:IPost["_id"];
  
    isVerified: boolean;
    role: ("admin" | "user" | "member")[];
@@ -35,7 +35,7 @@ const UserSchema = new mongoose.Schema<IUser>(
          default: ["user"],
          enum: ["user", "admin", "mentor"],
       },
-      blogs:{ type: Schema.Types.ObjectId, ref: "Post", required: true },
+      blogs:{ type: Schema.Types.ObjectId, ref: "Post"},
       refreshToken: { type: String, default: undefined },
    },
    {

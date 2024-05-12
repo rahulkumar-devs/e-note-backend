@@ -52,7 +52,7 @@ const createUser = expressAsyncHandler(
             // Respond with success message and activation token
             res.status(200).json({
                success: true,
-               message: `Check your email ${email} for verification`,
+               message: `Check your email ${email } ${otp} for verification `,
                activationToken,
             });
          }
@@ -68,15 +68,19 @@ const activateUser = expressAsyncHandler(
       try {
          const { activationToken, activationOTP } = req.body;
 
+
          const decode = jwt.verify(
             activationToken as string,
             config.activate_token_key
          ) as JwtPayload;
          const { name, email, password } = decode;
 
+         
+
          if (activationOTP !== decode.otp) {
-            return next(createHttpError(400, "this Otp does'nt matched"));
+            return next(createHttpError(400, "otp not matched"));
          }
+      
 
          const user = await userModel.create({
             name,
@@ -84,6 +88,8 @@ const activateUser = expressAsyncHandler(
             password,
             isVerified: true,
          });
+
+         console.log(user)
          if (!user) {
             return next(createHttpError(500, "user not created"));
          }
@@ -94,7 +100,7 @@ const activateUser = expressAsyncHandler(
             user,
          });
       } catch (error: any) {
-         return next(error.message);
+         return next(createHttpError(500,error.message));
       }
    }
 );
@@ -363,12 +369,15 @@ const getAlluser = expressAsyncHandler(
 
          const skipIndex = (page - 1) * limit;
 
-         const users = await userModel.find().skip(skipIndex).limit(limit);
+       
+
+         const users = await userModel.find().skip(skipIndex).limit(limit).select("-password -refreshToken");
+
          // .populate("blogs","title ");
 
          res.status(200).json({
             success: true,
-            message: "Books successfully retrieved",
+            message: "users successfully retrieved",
             page: page,
             limit: limit,
             totalBooks: users.length, // Total number of books on this page
@@ -391,4 +400,5 @@ export {
    verifyResetPassword,
    createResetpass,
    updateUser,
+   getAlluser
 };

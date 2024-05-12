@@ -10,12 +10,14 @@ export interface IBook {
    author: Types.ObjectId;
    genre: string;
    coverImage: { public_id: string; url: string };
-   pdf_file: { public_id: string; url: string }[];
-   imageFiles:{ public_id: string; url: string }[];
-   descriptions?:string;
-   like?: IUser["_id"];
-   views:number;
-   dislike?: Array<string>;
+   pdf_file: { public_id: string; url: string };
+   imageFiles: { public_id: string; url: string }[];
+   descriptions?: string;
+   likedBy: mongoose.Types.ObjectId[];
+   dislikedBy: mongoose.Types.ObjectId[];
+   likes: number;
+   dislikes: number;
+   views: number;
    createdAt?: Date;
    updatedAt?: Date;
 }
@@ -30,9 +32,21 @@ const bookSchema = new mongoose.Schema<IBook>(
       },
       genre: { type: String },
       coverImage: { public_id: String, url: String },
-      pdf_file: [{ public_id: String, url: String }],
+      pdf_file: { public_id: String, url: String },
       imageFiles: [{ public_id: String, url: String }],
-      descriptions:String,
+      descriptions: String,
+      likes: {
+         type: Number,
+         required: true,
+         default: 0,
+      },
+      dislikes: {
+         type: Number,
+         required: true,
+         default: 0,
+      },
+      likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      dislikedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
       createdAt: {
          type: Date,
          default: Date.now(),
