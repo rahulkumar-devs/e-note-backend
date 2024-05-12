@@ -6,18 +6,18 @@ import {
    uploadFileToCloudinary,
 } from "../utils/uploadToCloudinary";
 import createHttpError from "http-errors";
-import cloudinary from "../config/cloudinary.config";
-import { checkFileExistsInCloudinary } from "../utils/checkCloudinaryFile";
+import UserModel from "../models/user.model";
+import mongoose, { ObjectId, isValidObjectId } from "mongoose";
 
 // Create Book
 export const createBook = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const { title, genre } = req.body as IBook;
+      const { title, genre, descriptions } = req.body as IBook;
 
       try {
          // Validate title and genre
-         if (!title || !genre) {
+         if (!title || !genre || !descriptions) {
             return next(createHttpError(404, "Title and genre are required."));
          }
 
@@ -39,19 +39,23 @@ export const createBook = expressAsyncHandler(
          }
 
          // Upload PDF Files
-         const pdfFiles = files.pdf_file || [];
-         const resultPdf = await Promise.all(
-            pdfFiles.map(async (pdfFile) => {
-               const pdf_result = await uploadFileToCloudinary(
-                  pdfFile,
-                  "pdf_file"
-               );
-               return {
-                  public_id: pdf_result.public_id,
-                  url: pdf_result.url,
-               };
-            })
-         );
+
+         let pdf_fileDetails: { public_id: string; url: string } = {
+            public_id: "",
+            url: "",
+         };
+
+         const pdf_file = files.pdf_file?.[0];
+         if (pdf_file) {
+            const resultPdf_file = await uploadFileToCloudinary(
+               pdf_file,
+               "pdf_file"
+            );
+            pdf_fileDetails = {
+               public_id: resultPdf_file.public_id,
+               url: resultPdf_file.url,
+            };
+         }
 
          // Upload Image Files
          const imageFiles = await Promise.all(
@@ -71,9 +75,13 @@ export const createBook = expressAsyncHandler(
          const book = await bookModel.create({
             title,
             genre,
+            descriptions,
             coverImage: coverImageDetails,
-            pdf_file: resultPdf,
-            file: imageFiles,
+            pdf_file: pdf_fileDetails,
+            imageFiles: imageFiles.map((file) => ({
+               public_id: file.public_id,
+               url: file.url,
+            })),
             author: req.user?._id,
          });
 
@@ -94,7 +102,7 @@ export const createBook = expressAsyncHandler(
 export const updateBook = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       try {
-         const { title, genre } = req.body as IBook;
+         const { title, genre, descriptions } = req.body as IBook;
          const id = req.params.id;
 
          const files = req.files as {
@@ -130,31 +138,24 @@ export const updateBook = expressAsyncHandler(
          }
 
          // Handle PDF files update
-         const pdfFiles = files.pdf_file || [];
-         if (pdfFiles.length > 0) {
-            // Delete existing PDF files
-            await Promise.all(
-               book.pdf_file.map(async (pdf) => {
-                  await deleteToCloudinary(pdf.public_id);
-               })
+
+         const pdf_file = files.pdf_file?.[0];
+         if (pdf_file) {
+            if (book.pdf_file && book.pdf_file.public_id) {
+               await deleteToCloudinary(book.pdf_file.public_id);
+            }
+
+            // Upload new cover image
+            const pdf_fileResult = await uploadFileToCloudinary(
+               pdf_file,
+               "pdf_file"
             );
 
-            // Upload new PDF files
-            const resultPdf = await Promise.all(
-               pdfFiles.map(async (pdfFile) => {
-                  const pdf_result = await uploadFileToCloudinary(
-                     pdfFile,
-                     "pdf_file"
-                  );
-                  return {
-                     public_id: pdf_result.public_id,
-                     url: pdf_result.url,
-                  };
-               })
-            );
-
-            // Update book's PDF files
-            book.pdf_file = resultPdf;
+            // Update book's cover image
+            book.pdf_file = {
+               public_id: pdf_fileResult.public_id,
+               url: pdf_fileResult.url,
+            };
          }
 
          // Handle image files update
@@ -210,9 +211,7 @@ export const deleteBook = expressAsyncHandler(
          const book = await bookModel.findById(id);
          await deleteToCloudinary(book?.coverImage.public_id as string);
 
-         book?.pdf_file.map(async (pdf_file) => {
-            await deleteToCloudinary(pdf_file.public_id as string);
-         });
+         await deleteToCloudinary(book?.pdf_file.public_id as string);
 
          book?.imageFiles.map(async (img_file) => {
             await deleteToCloudinary(img_file.public_id as string);
@@ -285,12 +284,9 @@ export const deleteSpecificFile = expressAsyncHandler(
             await book.save();
          }
 
-         if (book.pdf_file && book.pdf_file.length > 0) {
-            await bookModel.findByIdAndUpdate(
-               { _id: book_id },
-               { $pull: { pdf_file: { _id: file_id } } },
-               { new: true }
-            );
+         if (book.pdf_file && book.pdf_file.public_id === file_id) {
+            book.pdf_file = { public_id: "", url: "" };
+            await book.save();
          }
 
          if (book.imageFiles && book.imageFiles.length > 0) {
@@ -315,20 +311,94 @@ export const deleteSpecificFile = expressAsyncHandler(
    }
 );
 
+// get single book or pdf
+
 export const singleBook = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       try {
          const id = req.params.id;
+
          const book = await bookModel.findById(id);
+
+         if (!book) {
+            next(createHttpError(404, "Book not found"));
+         }
+
          res.status(200).json({
             success: true,
-            message: `${id} book found`,
+            message: "Book successfully found",
             book,
          });
       } catch (error: any) {
-         next(createHttpError(500, error.message));
+         next(createHttpError(error.message));
       }
    }
 );
 
-// get single book or pdf
+// Add like and dislike
+export const likeOrDislike = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const { bookId, userId } = req.params;
+         if (!isValidObjectId(bookId) || !isValidObjectId(userId)) {
+            return next(createHttpError(400, "Not valid Id"));
+         }
+
+         const bookObjectId = new mongoose.Types.ObjectId(bookId);
+         const userObjectId = new mongoose.Types.ObjectId(userId);
+
+         const book = await bookModel.findById(bookObjectId);
+         const user = await UserModel.findById(userObjectId);
+
+         if (!book) {
+            return next(createHttpError(404, "Book not found"));
+         }
+         if (!user) {
+            return next(createHttpError(404, "User not found"));
+         }
+
+         let updateQuery: any = {};
+         const isAlreadyLiked = book.likedBy?.includes(userObjectId);
+
+         if (isAlreadyLiked) {
+            updateQuery = {
+               $inc: { likes: -1 },
+               $pull: { likedBy: userId },
+            };
+         } else {
+            updateQuery = {
+               $inc: { likes: 1 },
+               $addToSet: { likedBy: userId },
+            };
+         }
+
+         const isAlreadyDisliked = book.dislikedBy?.includes(userObjectId);
+
+         if (isAlreadyDisliked) {
+            updateQuery = {
+               $inc: { dislikes: -1 },
+               $pull: { dislikedBy: userId },
+            };
+         }
+
+         if (Object.keys(updateQuery).length === 0) {
+            res.status(400).json({
+               success: true,
+               message: "Not Liked",
+            });
+         }
+         await bookModel.updateOne({ _id: bookId }, updateQuery);
+
+        const newBookId =  await bookModel.findById(bookObjectId)
+
+         res.status(200).json({
+            success: true,
+            message: "Like or dislike updated successfully",
+            book:newBookId
+         });
+      } catch (error: any) {
+         next(createHttpError(error.message));
+      }
+   }
+);
+
