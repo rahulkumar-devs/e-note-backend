@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
 import { IPost } from "./articles/blog.model";
+import { IBook } from "./book.model";
 
 export interface IUser extends Document {
 _id?:string;
@@ -11,6 +12,7 @@ _id?:string;
    password: string;
    avatar: string;
    blogs?:IPost["_id"];
+   favourites:mongoose.Types.ObjectId[];
  
    isVerified: boolean;
    role: ("admin" | "user" | "member")[];
@@ -35,6 +37,7 @@ const UserSchema = new mongoose.Schema<IUser>(
          default: ["user"],
          enum: ["user", "admin", "mentor"],
       },
+   
       blogs:{ type: Schema.Types.ObjectId, ref: "Post"},
       refreshToken: { type: String, default: undefined },
    },
