@@ -1,13 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import expressAsyncHandler from "express-async-handler";
-import bookModel, { IBook } from "../models/book.model";
+import bookModel, { IBook } from "../../models/book.model";
 import {
    deleteToCloudinary,
    uploadFileToCloudinary,
-} from "../utils/uploadToCloudinary";
+} from "../../utils/uploadToCloudinary";
 import createHttpError from "http-errors";
-import UserModel from "../models/user.model";
-import mongoose, { ObjectId, isValidObjectId } from "mongoose";
+import mongoose from "mongoose";
 
 // Create Book
 export const createBook = expressAsyncHandler(
@@ -76,6 +75,7 @@ export const createBook = expressAsyncHandler(
             title,
             genre,
             descriptions,
+
             coverImage: coverImageDetails,
             pdf_file: pdf_fileDetails,
             imageFiles: imageFiles.map((file) => ({
@@ -318,7 +318,7 @@ export const singleBook = expressAsyncHandler(
       try {
          const id = req.params.id;
 
-         const book = await bookModel.findById(id);
+         const book = await bookModel.findById(id).populate("likedBy","_id name avatar")
 
          if (!book) {
             next(createHttpError(404, "Book not found"));
@@ -335,70 +335,110 @@ export const singleBook = expressAsyncHandler(
    }
 );
 
-// Add like and dislike
-export const likeOrDislike = expressAsyncHandler(
+export const updateBookLikes = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       try {
-         const { bookId, userId } = req.params;
-         if (!isValidObjectId(bookId) || !isValidObjectId(userId)) {
-            return next(createHttpError(400, "Not valid Id"));
+         const { bookId } = req.params;
+         const userId = req.user?._id;
+
+         if (!userId || !bookId) {
+            return next(createHttpError(404, "User or book id not found"));
          }
 
-         const bookObjectId = new mongoose.Types.ObjectId(bookId);
          const userObjectId = new mongoose.Types.ObjectId(userId);
 
-         const book = await bookModel.findById(bookObjectId);
-         const user = await UserModel.findById(userObjectId);
+         const book = await bookModel.findById(bookId);
 
          if (!book) {
             return next(createHttpError(404, "Book not found"));
          }
-         if (!user) {
-            return next(createHttpError(404, "User not found"));
-         }
 
-         let updateQuery: any = {};
-         const isAlreadyLiked = book.likedBy?.includes(userObjectId);
+         const alreadyLiked = book?.likedBy.includes(userObjectId);
+         const alreadyDisliked = book?.dislikedBy.includes(userObjectId);
 
-         if (isAlreadyLiked) {
-            updateQuery = {
-               $inc: { likes: -1 },
-               $pull: { likedBy: userId },
-            };
+         
+
+         const queryObject: any = {};
+
+         if (alreadyLiked) {
+            // If user already liked the book, remove the like
+            queryObject.$pull = { likedBy: userObjectId };
+            queryObject.$inc = { likes: -1 };
+         //  const updateLike=  await bookModel.findByIdAndUpdate(bookId, queryObject);
+         //  console.log(updateLike)
+         }else  if (alreadyDisliked) {
+            // If user already disliked the book, remove the dislike and add like
+            queryObject.$pull = { dislikedBy: userObjectId };
+            queryObject.$inc = { dislikes: -1 };
+            queryObject.$addToSet = { likedBy: userObjectId };
+            queryObject.$inc = { likes: 1 };
          } else {
-            updateQuery = {
-               $inc: { likes: 1 },
-               $addToSet: { likedBy: userId },
-            };
+            // If user hasn't interacted with the book yet, add like
+            queryObject.$addToSet = { likedBy: userObjectId };
+            queryObject.$inc = { likes: 1 };
          }
 
-         const isAlreadyDisliked = book.dislikedBy?.includes(userObjectId);
-
-         if (isAlreadyDisliked) {
-            updateQuery = {
-               $inc: { dislikes: -1 },
-               $pull: { dislikedBy: userId },
-            };
-         }
-
-         if (Object.keys(updateQuery).length === 0) {
-            res.status(400).json({
-               success: true,
-               message: "Not Liked",
-            });
-         }
-         await bookModel.updateOne({ _id: bookId }, updateQuery);
-
-        const newBookId =  await bookModel.findById(bookObjectId)
+       const likesData=  await bookModel.findByIdAndUpdate(bookId, queryObject);
 
          res.status(200).json({
             success: true,
-            message: "Like or dislike updated successfully",
-            book:newBookId
+            message: "Like updated successfully",
+            likesData
          });
-      } catch (error: any) {
-         next(createHttpError(error.message));
+      } catch (error) {
+         next(createHttpError(500, "Internal server error"));
       }
    }
 );
+export const updateBookDislikes = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const { bookId } = req.params;
 
+         const userId = req.user?._id;
+
+         if (!userId || !bookId) {
+            return next(createHttpError(404, "User or book id not found"));
+         }
+
+         const userObjectId = new mongoose.Types.ObjectId(userId);
+
+         const book = await bookModel.findById(bookId);
+
+         if (!book) {
+            return next(createHttpError(404, "Book not found"));
+         }
+
+         const alreadyLiked = book?.likedBy.includes(userObjectId);
+         const alreadyDisliked = book?.dislikedBy.includes(userObjectId);
+
+         const queryObject: any = {};
+
+         if (alreadyLiked) {
+            // If user already liked the book, remove the like
+            queryObject.$pull = { likedBy: userObjectId };
+            queryObject.$inc = { likes: -1 };
+
+         }
+        else if (alreadyDisliked) {
+            // If user already disliked the book, remove the dislike
+            queryObject.$pull = { dislikedBy: userObjectId };
+            queryObject.$inc = { dislikes: -1 };
+         } else {
+            // If user hasn't interacted with the book yet, add dislike
+            queryObject.$addToSet = { dislikedBy: userObjectId };
+            queryObject.$inc = { dislikes: 1 };
+         }
+
+        const disliked =  await bookModel.findByIdAndUpdate(bookId, queryObject);
+
+         res.status(200).json({
+            success: true,
+            message: " dislike updated successfully",
+            disliked
+         });
+      } catch (error) {
+         next(createHttpError(500, "Internal server error"));
+      }
+   }
+);

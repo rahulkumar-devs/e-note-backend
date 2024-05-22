@@ -4,6 +4,7 @@ import createHttpError from "http-errors";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "../config/config";
 import UserModel, { IUser } from "../models/user.model";
+import { token } from "morgan";
 
 declare global {
    namespace Express {
@@ -21,7 +22,6 @@ const isAuthenticated = expressAsyncHandler(
             req.cookies?.accessToken ||
             req.header("authorization")?.replace("Bearer", "");
 
-          
 
          if (!tokens) {
             return next(createHttpError(401, "Token Expired "));

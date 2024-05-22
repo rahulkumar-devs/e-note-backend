@@ -1,15 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
 import createHttpError from "http-errors";
-import userModel, { IUser } from "../models/user.model";
+import userModel, { IUser } from "../../models/user.model";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
-import { config } from "../config/config";
-import UserModel from "../models/user.model";
+import { config } from "../../config/config";
+import UserModel from "../../models/user.model";
 import generateOTP, {
    generateVerificationToken,
-} from "../utils/otp-generator.utils";
-import sendMailer, { IEmailOptions } from "../utils/sendMailer.utils";
-import generateTokens from "../utils/generateToken.utils";
+} from "../../utils/otp-generator.utils";
+import sendMailer, { IEmailOptions } from "../../utils/sendMailer.utils";
+import generateTokens from "../../utils/generateToken.utils";
 import { isValidObjectId } from "mongoose";
 
 const createUser = expressAsyncHandler(
@@ -139,7 +139,7 @@ const userLogin = expressAsyncHandler(
       if (!email || !password)
          return next(createHttpError(404, "Invalid Details"));
       try {
-         const user = await userModel.findOne({ email });
+         let user = await userModel.findOne({ email });
 
          if (!user) return next(createHttpError(404, "Invalid email"));
          if (!user.isComparePassword(password))
@@ -147,7 +147,7 @@ const userLogin = expressAsyncHandler(
 
          const { accessToken, refreshToken } = await generateTokens(user._id);
 
-         // await redis.set(user?._id, JSON.stringify(user));
+       const newuser =   await userModel.findOne({ email }).select("-password -refreshToken")
 
          const options = {
             httpOnly: true,
@@ -159,8 +159,9 @@ const userLogin = expressAsyncHandler(
             .cookie("refreshToken", refreshToken, options)
             .json({
                success: true,
-               user: accessToken,
+               accessToken,
                refreshToken,
+               user:newuser,
                message: "User loged in successfully",
             });
       } catch (error) {
@@ -221,12 +222,12 @@ const refreshAccessToken = expressAsyncHandler(
 
          const user = await userModel.findById(decodeToken?._id);
          if (!user) {
-            return next(createHttpError(401, "Invalid refreshToken"));
+            return next(createHttpError(403, "forbidden"));
          }
 
          if (user?.refreshToken !== incomingToken) {
             return next(
-               createHttpError(401, "Refresh Token is Expired or used")
+               createHttpError(403, "Refresh Token is Expired or used")
             );
          }
 
@@ -241,7 +242,7 @@ const refreshAccessToken = expressAsyncHandler(
             .cookie("refreshToken", refreshToken, options)
             .json({
                success: true,
-               user: accessToken,
+                accessToken,
                refreshToken,
                message: "Access token refreshed",
             });

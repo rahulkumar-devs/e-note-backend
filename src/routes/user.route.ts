@@ -10,7 +10,7 @@ import {
    verifyResetPassword,
    createResetpass,
    getAlluser,
-} from "../controllers/user.ctrl";
+} from "../controllers/auth/user.ctrl";
 
 import { isAuthenticated } from "../middlewares/authentication.middleware";
 
@@ -21,7 +21,7 @@ userRouter.route("/signup").post(createUser);
 userRouter.route("/activate-user").post(activateUser);
 
 userRouter.route("/signin").post(userLogin);
-userRouter.route("/refresh-token").post(isAuthenticated, refreshAccessToken);
+userRouter.route("/refresh-token").post( refreshAccessToken);
 userRouter.route("/logout").get(isAuthenticated, logoutUser);
 
 // Pass reset routes
