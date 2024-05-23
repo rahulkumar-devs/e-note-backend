@@ -3,7 +3,9 @@ import { isAuthenticated } from "../middlewares/authentication.middleware";
 import { restrict } from "../middlewares/rolePermission.middleware";
 import {
    createBook,
+   deleteSingleImage,
    deleteSpecificFile,
+   getSingleImage,
    readAllBooks,
    singleBook,
    updateBook,
@@ -41,5 +43,10 @@ booksRoute
 booksRoute.route("/book/:id").get(singleBook);
 booksRoute.route("/book/dislikes/:bookId").put(isAuthenticated,updateBookDislikes);
 booksRoute.route("/book/likes/:bookId").put(isAuthenticated,updateBookLikes);
+
+// single book routes
+booksRoute.route("/single-image").get(isAuthenticated,getSingleImage);
+booksRoute.route("/delete-single-image").delete(isAuthenticated,deleteSingleImage);
+
 
 export default booksRoute;
