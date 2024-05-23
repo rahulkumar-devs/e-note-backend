@@ -6,7 +6,7 @@ import {
    uploadFileToCloudinary,
 } from "../../utils/uploadToCloudinary";
 import createHttpError from "http-errors";
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 
 // Create Book
 export const createBook = expressAsyncHandler(
@@ -318,7 +318,9 @@ export const singleBook = expressAsyncHandler(
       try {
          const id = req.params.id;
 
-         const book = await bookModel.findById(id).populate("likedBy","_id name avatar")
+         const book = await bookModel
+            .findById(id)
+            .populate("likedBy", "_id name avatar");
 
          if (!book) {
             next(createHttpError(404, "Book not found"));
@@ -356,17 +358,15 @@ export const updateBookLikes = expressAsyncHandler(
          const alreadyLiked = book?.likedBy.includes(userObjectId);
          const alreadyDisliked = book?.dislikedBy.includes(userObjectId);
 
-         
-
          const queryObject: any = {};
 
          if (alreadyLiked) {
             // If user already liked the book, remove the like
             queryObject.$pull = { likedBy: userObjectId };
             queryObject.$inc = { likes: -1 };
-         //  const updateLike=  await bookModel.findByIdAndUpdate(bookId, queryObject);
-         //  console.log(updateLike)
-         }else  if (alreadyDisliked) {
+            //  const updateLike=  await bookModel.findByIdAndUpdate(bookId, queryObject);
+            //  console.log(updateLike)
+         } else if (alreadyDisliked) {
             // If user already disliked the book, remove the dislike and add like
             queryObject.$pull = { dislikedBy: userObjectId };
             queryObject.$inc = { dislikes: -1 };
@@ -378,12 +378,15 @@ export const updateBookLikes = expressAsyncHandler(
             queryObject.$inc = { likes: 1 };
          }
 
-       const likesData=  await bookModel.findByIdAndUpdate(bookId, queryObject);
+         const likesData = await bookModel.findByIdAndUpdate(
+            bookId,
+            queryObject
+         );
 
          res.status(200).json({
             success: true,
             message: "Like updated successfully",
-            likesData
+            likesData,
          });
       } catch (error) {
          next(createHttpError(500, "Internal server error"));
@@ -418,9 +421,7 @@ export const updateBookDislikes = expressAsyncHandler(
             // If user already liked the book, remove the like
             queryObject.$pull = { likedBy: userObjectId };
             queryObject.$inc = { likes: -1 };
-
-         }
-        else if (alreadyDisliked) {
+         } else if (alreadyDisliked) {
             // If user already disliked the book, remove the dislike
             queryObject.$pull = { dislikedBy: userObjectId };
             queryObject.$inc = { dislikes: -1 };
@@ -430,15 +431,125 @@ export const updateBookDislikes = expressAsyncHandler(
             queryObject.$inc = { dislikes: 1 };
          }
 
-        const disliked =  await bookModel.findByIdAndUpdate(bookId, queryObject);
+         const disliked = await bookModel.findByIdAndUpdate(
+            bookId,
+            queryObject
+         );
 
          res.status(200).json({
             success: true,
             message: " dislike updated successfully",
-            disliked
+            disliked,
          });
       } catch (error) {
          next(createHttpError(500, "Internal server error"));
+      }
+   }
+);
+
+// <======Operations on ImageFiles========>
+
+// get single imageFile
+
+interface ISingleImage {
+   bookId: string;
+   imageId: string;
+}
+
+export const getSingleImage = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const { bookId, imageId } = req.body as ISingleImage;
+
+         if (!isValidObjectId(bookId) || !isValidObjectId(imageId)) {
+            res.status(400).json({
+               success: false,
+               message: "Invalid bookId or imageId",
+            });
+            return;
+         }
+
+         const book = await bookModel.findById(bookId);
+
+         if (!book) {
+            res.status(404).json({
+               success: false,
+               message: "Book not found",
+            });
+            return;
+         }
+
+         const findImageId = book.imageFiles.find((image) => {
+            return image._id && image._id.toString() === imageId;
+         });
+
+         if (!findImageId) {
+            res.status(404).json({
+               success: false,
+               message: "Image not found in the book",
+            });
+            return;
+         }
+
+         res.status(200).json({
+            success: true,
+            message: "Image found",
+            image: findImageId,
+         });
+      } catch (error: any) {
+         next(createHttpError(500, error.message));
+      }
+   }
+);
+
+// delete single image file
+
+export const deleteSingleImage = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const { bookId, imageId } = req.body as ISingleImage;
+
+         if (!isValidObjectId(bookId) || !isValidObjectId(imageId)) {
+            res.status(400).json({
+               success: false,
+               message: "Invalid bookId or imageId",
+            });
+            return;
+         }
+
+         const book = await bookModel.findById(bookId);
+
+         if (!book) {
+            res.status(404).json({
+               success: false,
+               message: "Book not found",
+            });
+            return;
+         }
+         const imageIndex = book.imageFiles.findIndex(
+            (image) => image._id?.toString() === imageId
+         );
+
+         await deleteToCloudinary(imageId);
+
+         if (imageIndex === -1) {
+            res.status(404).json({
+               success: false,
+               message: "Image not found in the book",
+            });
+            return;
+         }
+
+         book.imageFiles.splice(imageIndex, 1);
+
+         await book.save();
+
+         res.status(200).json({
+            success: true,
+            message: "Image deleted successfully",
+         });
+      } catch (error: any) {
+         next(createHttpError(500, error.message));
       }
    }
 );

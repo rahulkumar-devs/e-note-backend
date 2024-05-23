@@ -35,7 +35,7 @@ const UserSchema = new mongoose.Schema<IUser>(
       role: {
          type: [String],
          default: ["user"],
-         enum: ["user", "admin", "mentor"],
+         enum: ["user", "admin", "member"],
       },
    
       blogs:{ type: Schema.Types.ObjectId, ref: "Post"},

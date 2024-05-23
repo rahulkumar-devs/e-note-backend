@@ -11,7 +11,7 @@ export interface IBook {
    genre: string;
    coverImage: { public_id: string; url: string };
    pdf_file: { public_id: string; url: string };
-   imageFiles: { public_id: string; url: string }[];
+   imageFiles: {_id?:string, public_id: string; url: string }[];
    descriptions?: string;
    likedBy: mongoose.Types.ObjectId[];
    dislikedBy: mongoose.Types.ObjectId[];

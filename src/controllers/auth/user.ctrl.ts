@@ -12,7 +12,7 @@ import sendMailer, { IEmailOptions } from "../../utils/sendMailer.utils";
 import generateTokens from "../../utils/generateToken.utils";
 import { isValidObjectId } from "mongoose";
 
-const createUser = expressAsyncHandler(
+const userRegister = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       const { name, email, password } = req.body;
 
@@ -52,7 +52,7 @@ const createUser = expressAsyncHandler(
             // Respond with success message and activation token
             res.status(200).json({
                success: true,
-               message: `Check your email ${email } ${otp} for verification `,
+               message: `Check your email ${email }  for verification `,
                activationToken,
             });
          }
@@ -392,7 +392,7 @@ const getAlluser = expressAsyncHandler(
 );
 
 export {
-   createUser,
+   userRegister,
    userLogin,
    logoutUser,
    refreshAccessToken,
