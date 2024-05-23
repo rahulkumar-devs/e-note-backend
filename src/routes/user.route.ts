@@ -1,7 +1,7 @@
 import express from "express";
 
 import {
-   createUser,
+   userRegister,
    userLogin,
    logoutUser,
    refreshAccessToken,
@@ -17,7 +17,7 @@ import { isAuthenticated } from "../middlewares/authentication.middleware";
 const userRouter = express.Router();
 
 // Route for user registration
-userRouter.route("/signup").post(createUser);
+userRouter.route("/signup").post(userRegister);
 userRouter.route("/activate-user").post(activateUser);
 
 userRouter.route("/signin").post(userLogin);
