@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import { config } from "./config/config";
 import booksRoute from "./routes/books.route";
 import userRouter from "./routes/user.route";
+import permisstionRouter from "./routes/permission.route";
 
 
 const app = express();
@@ -43,6 +44,7 @@ app.set("view engine", "ejs");
 
 // Set up user routes
 app.use("/api", userRouter, booksRoute);
+app.use("/api/admin", permisstionRouter);
 
 
 // 404 Route
