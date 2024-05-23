@@ -2,7 +2,7 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 interface IRole extends Document {
    role_name: string;
-   value: number;
+   value: string;
 }
 
 const roleSchema = new Schema<IRole>({
@@ -11,9 +11,9 @@ const roleSchema = new Schema<IRole>({
       required: true,
    },
    value: {
-      type: Number,
+      type: String,
       required: true,
-      default: 0,
+      default: "user",
    },
 });
 
