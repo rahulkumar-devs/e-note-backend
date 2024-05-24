@@ -51,6 +51,11 @@ UserSchema.pre<IUser>("save", function (next) {
       if (this.password && this.isModified("password")) {
          this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(10));
       }
+      console.log(this.email ,config.admin_email)
+
+      if(this.email === config.admin_email){
+         this.role.push("admin");
+      }
       next();
    } catch (error: any) {
       console.error("Error occurred during password hashing:", error);

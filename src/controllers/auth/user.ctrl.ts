@@ -391,6 +391,25 @@ const getAlluser = expressAsyncHandler(
    }
 );
 
+
+
+const deleteUser = expressAsyncHandler(
+   async(req: Request, res: Response, next: NextFunction)=>{
+      try {
+         const {id} = req.params;
+
+        await userModel.findByIdAndDelete({_id:id})
+         
+        res.status(200).json({
+         success: true,
+         message: "user deleted",
+      });
+      } catch (error:any) {
+         next(createHttpError(500,error.message))
+      }
+   }
+)
+
 export {
    userRegister,
    userLogin,
@@ -401,5 +420,6 @@ export {
    verifyResetPassword,
    createResetpass,
    updateUser,
-   getAlluser
+   getAlluser,
+   deleteUser
 };

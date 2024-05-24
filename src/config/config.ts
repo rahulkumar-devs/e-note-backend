@@ -29,6 +29,9 @@ const _config = {
    smtp_user: process.env.SMTP_USER as string,
    smtp_host: process.env.SMTP_HOST as string,
    smtp_password: process.env.SMTP_PASSWORD as string,
+
+   // Admin Emain
+   admin_email:process.env.ADMIN_EMAIL
 };
 
 // freez _config so that noBody can overWrite

@@ -553,3 +553,51 @@ export const deleteSingleImage = expressAsyncHandler(
       }
    }
 );
+
+
+
+export const searchBook = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+     try {
+       // Pagination parameters
+       const page = parseInt(req.query.page as string) || 1;
+       const limit = parseInt(req.query.limit as string) || 10;
+ 
+       // Search parameters from request body
+       const searchParams = req.body;
+ 
+       // Construct the search query dynamically
+       const searchQuery: any = {};
+       for (const [key, value] of Object.entries(searchParams)) {
+         if (typeof value === 'string') {
+           searchQuery[key] = { $regex: value, $options: 'i' }; 
+         } else {
+           searchQuery[key] = value; 
+         }
+       }
+ 
+       // Calculate the number of documents to skip
+       const skipIndex = (page - 1) * limit;
+ 
+       // Query to fetch paginated and filtered results
+       const allBooks = await bookModel
+         .find(searchQuery)
+         .skip(skipIndex)
+         .limit(limit)
+         .populate('author', 'name email');
+ 
+       // Get the total count for pagination purposes
+       const totalBooks = await bookModel.countDocuments(searchQuery);
+ 
+       // Respond with the paginated and filtered books
+       res.status(200).json({
+         totalBooks,
+         totalPages: Math.ceil(totalBooks / limit),
+         currentPage: page,
+         books: allBooks
+       });
+     } catch (error: any) {
+       res.status(500).json({ message: 'Error fetching books', error: error.message });
+     }
+   }
+ );

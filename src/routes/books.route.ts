@@ -7,6 +7,7 @@ import {
    deleteSpecificFile,
    getSingleImage,
    readAllBooks,
+   searchBook,
    singleBook,
    updateBook,
    updateBookDislikes,
@@ -16,8 +17,10 @@ import upload from "../middlewares/multer.middleware";
 
 const booksRoute: Router = express.Router();
 
+// Protected Routes or admin or member route
 booksRoute.route("/create-book").post(
    isAuthenticated,
+   restrict("admin", "member"),
    upload.fields([
       { name: "coverImage", maxCount: 1 },
       { name: "pdf_file", maxCount: 2 },
@@ -25,8 +28,9 @@ booksRoute.route("/create-book").post(
    ]),
    createBook
 );
-booksRoute.route("/update-book/:id").post(
+booksRoute.route("/update-book/:id").put(
    isAuthenticated,
+   restrict("admin", "member"),
    upload.fields([
       { name: "coverImage", maxCount: 1 },
       { name: "pdf_file", maxCount: 2 },
@@ -34,19 +38,34 @@ booksRoute.route("/update-book/:id").post(
    ]),
    updateBook
 );
-booksRoute.route("/books").get(isAuthenticated,readAllBooks);
 
+// <======All user Access======>
+booksRoute
+   .route("/book/dislikes/:bookId")
+   .put(isAuthenticated, updateBookDislikes);
+booksRoute.route("/book/likes/:bookId").put(isAuthenticated, updateBookLikes);
 booksRoute
    .route("/books/:book_id/files/:file_id")
-   .put(isAuthenticated, deleteSpecificFile);
+   .put(isAuthenticated, restrict("admin", "member"), deleteSpecificFile);
 
-booksRoute.route("/book/:id").get(singleBook);
-booksRoute.route("/book/dislikes/:bookId").put(isAuthenticated,updateBookDislikes);
-booksRoute.route("/book/likes/:bookId").put(isAuthenticated,updateBookLikes);
+booksRoute
+   .route("/search-books")
+   .get(isAuthenticated, restrict("user", "admin", "member"), searchBook);
+
+// <==============================>
+// <========General Routes============>
+// <==============================>
+
+booksRoute.route("/books").get(isAuthenticated, readAllBooks);
+
+booksRoute.route("/book/:id").get(isAuthenticated, singleBook);
 
 // single book routes
-booksRoute.route("/single-image").get(isAuthenticated,getSingleImage);
-booksRoute.route("/delete-single-image").delete(isAuthenticated,deleteSingleImage);
-
+booksRoute
+   .route("/single-image")
+   .get(isAuthenticated, restrict("user", "admin", "member"), getSingleImage);
+booksRoute
+   .route("/delete-single-image")
+   .delete(isAuthenticated, deleteSingleImage);
 
 export default booksRoute;

@@ -4,7 +4,7 @@ import  crypto  from 'crypto';
 
 function generateRandomPassword(length:number) {
   // Define the characters to be used in the password
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
   const charactersLength = characters.length;
   
   // Generate a random password

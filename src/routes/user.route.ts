@@ -1,3 +1,4 @@
+import { restrict } from './../middlewares/rolePermission.middleware';
 import express from "express";
 
 import {
@@ -10,9 +11,11 @@ import {
    verifyResetPassword,
    createResetpass,
    getAlluser,
+   deleteUser,
 } from "../controllers/auth/user.ctrl";
 
 import { isAuthenticated } from "../middlewares/authentication.middleware";
+import { searchBook } from '../controllers/book/book.ctrl';
 
 const userRouter = express.Router();
 
@@ -22,7 +25,6 @@ userRouter.route("/activate-user").post(activateUser);
 
 userRouter.route("/signin").post(userLogin);
 userRouter.route("/refresh-token").post( refreshAccessToken);
-userRouter.route("/logout").get(isAuthenticated, logoutUser);
 
 // Pass reset routes
 userRouter.route("/forgot-password").post(forgotpassword);
@@ -30,8 +32,12 @@ userRouter.route("/verify-password").post(verifyResetPassword);
 userRouter.route("/new-password/:id").post(createResetpass);
 
 
-userRouter.route("/users").get(isAuthenticated,getAlluser);
 
-// Some Functionality
+// Some protected routes
+userRouter.route("/logout").get(isAuthenticated, logoutUser);
+userRouter.route("/delete-users/:id").delete(isAuthenticated,restrict("admin"),deleteUser);
+userRouter.route("/users").get(isAuthenticated,restrict("admin"),getAlluser);
+
+
 
 export default userRouter;
