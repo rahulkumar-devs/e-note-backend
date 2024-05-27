@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "tsc && node dist/app.js",
-    "dev": "nodemon --exec ts-node ./server.ts"
+    "dev": "nodemon --exec ts-node ./server.ts",
+    "build":"tsc"
   },
   "keywords": [],
   "author": "Rahu kumar",

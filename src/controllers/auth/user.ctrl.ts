@@ -52,7 +52,7 @@ const userRegister = expressAsyncHandler(
             // Respond with success message and activation token
             res.status(200).json({
                success: true,
-               message: `Check your email ${email }  for verification `,
+               message: `Check your email ${email } test-${otp}  for verification `,
                activationToken,
             });
          }
@@ -131,7 +131,8 @@ const updateUser = expressAsyncHandler(
    }
 );
 
-// User login
+// User login 
+// console.log()
 
 const userLogin = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -141,9 +142,9 @@ const userLogin = expressAsyncHandler(
       try {
          let user = await userModel.findOne({ email });
 
-         if (!user) return next(createHttpError(404, "Invalid email"));
+         if (!user) return next(createHttpError(400, "Invalid email"));
          if (!user.isComparePassword(password))
-            return next(createHttpError(404, "Invalid password"));
+            return next(createHttpError(400, "Invalid password"));
 
          const { accessToken, refreshToken } = await generateTokens(user._id);
 
@@ -164,8 +165,8 @@ const userLogin = expressAsyncHandler(
                user:newuser,
                message: "User loged in successfully",
             });
-      } catch (error) {
-         next(error);
+      } catch (error:any) {
+         next(createHttpError(500,error.message))
       }
    }
 );
@@ -174,6 +175,7 @@ const userLogin = expressAsyncHandler(
 
 const logoutUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
+     try {
       const id = req.user?._id;
       if (!isValidObjectId(id)) {
          next(createHttpError(400, "not a valid Id"));
@@ -197,6 +199,10 @@ const logoutUser = expressAsyncHandler(
             success: true,
             message: "Logout successfully",
          });
+      
+     } catch (error:any) {
+      next(createHttpError(500,error.message))
+     }
    }
 );
 
@@ -335,7 +341,7 @@ interface IResetBodyPass {
 const createResetpass = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       const { id } = req.params;
-      console.log(id);
+      
       const { password, confirmPassword } = req.body as IResetBodyPass;
       try {
          if (password !== confirmPassword) {

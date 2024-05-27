@@ -8,6 +8,8 @@ export const createPost = expressAsyncHandler(
     async (req:Request,res:Response,next:NextFunction)=>{
         try {
 
+            const {} = req.body;
+
             
         } catch (error:any) {
             next(createHttpError(500,error.message))
