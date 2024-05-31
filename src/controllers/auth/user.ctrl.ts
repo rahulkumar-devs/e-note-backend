@@ -153,6 +153,7 @@ const userLogin = expressAsyncHandler(
          const options = {
             httpOnly: true,
             secure: true,
+            
          };
 
          res.status(200)
@@ -370,6 +371,7 @@ const createResetpass = expressAsyncHandler(
 // For admin
 const getAlluser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
+
       try {
          const page = parseInt(req.query.page as string) || 1;
          const limit = parseInt(req.query.page as string) || 10;
@@ -379,6 +381,7 @@ const getAlluser = expressAsyncHandler(
        
 
          const users = await userModel.find().skip(skipIndex).limit(limit).select("-password -refreshToken");
+        
 
          // .populate("blogs","title ");
 
@@ -392,7 +395,8 @@ const getAlluser = expressAsyncHandler(
             users,
          });
       } catch (error: any) {
-         next(createHttpError(500, error.message));
+       
+         next(createHttpError(500, `${error.message}===>`));
       }
    }
 );

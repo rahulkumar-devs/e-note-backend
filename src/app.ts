@@ -10,8 +10,7 @@ import { config } from "./config/config";
 import booksRoute from "./routes/books.route";
 import userRouter from "./routes/user.route";
 import adminRoute from "./routes/admin.route";
-
-
+import { errorHandler, morgonDebug } from "./utils/errorHandler";
 
 const app = express();
 
@@ -19,12 +18,11 @@ const app = express();
 app.use(cookieParser());
 
 // Enable CORS middleware
-
 app.use(
    cors({
       origin: "http://localhost:3000",
-      methods: ["GET", "POST","PUT"], 
-      allowedHeaders: ["Content-Type"],
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      allowedHeaders: ["Content-Type", "Authorization"],
       credentials: true
    })
 );
@@ -37,16 +35,16 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(compression());
 
 // Logging middleware
-app.use(morgan("dev"));
+app.use(morgan("dev")); // Use 'dev' format for logging
 
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 
 // Set up user routes
-app.use("/api", userRouter, booksRoute);
+app.use("/api", userRouter); // Separate routes should be mounted separately
+app.use("/api", booksRoute); // Separate routes should be mounted separately
 app.use("/api/admin", adminRoute);
-
 
 // 404 Route
 app.all("*", (req: Request, res: Response, next: NextFunction) => {

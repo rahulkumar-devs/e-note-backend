@@ -24,7 +24,7 @@ userRouter.route("/signup").post(userRegister);
 userRouter.route("/activate-user").post(activateUser);
 
 userRouter.route("/signin").post(userLogin);
-userRouter.route("/refresh-token").post( refreshAccessToken);
+userRouter.route("/refresh-token").get( refreshAccessToken);
 
 // Pass reset routes
 userRouter.route("/forgot-password").post(forgotpassword);
@@ -34,7 +34,7 @@ userRouter.route("/new-password/:id").post(createResetpass);
 
 
 // Some protected routes
-userRouter.route("/logout").get(isAuthenticated, logoutUser);
+userRouter.route("/logout").post(isAuthenticated, logoutUser);
 userRouter.route("/delete-users/:id").delete(isAuthenticated,restrict("admin"),deleteUser);
 userRouter.route("/users").get(isAuthenticated,restrict("admin"),getAlluser);
 
