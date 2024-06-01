@@ -52,7 +52,7 @@ const userRegister = expressAsyncHandler(
             // Respond with success message and activation token
             res.status(200).json({
                success: true,
-               message: `Check your email ${email } test-${otp}  for verification `,
+               message: `Check your email ${email} test-${otp}  for verification `,
                activationToken,
             });
          }
@@ -75,12 +75,12 @@ const activateUser = expressAsyncHandler(
          ) as JwtPayload;
          const { name, email, password } = decode;
 
-         
+
 
          if (activationOTP !== decode.otp) {
             return next(createHttpError(400, "otp not matched"));
          }
-      
+
 
          const user = await userModel.create({
             name,
@@ -100,7 +100,7 @@ const activateUser = expressAsyncHandler(
             user,
          });
       } catch (error: any) {
-         return next(createHttpError(500,error.message));
+         return next(createHttpError(500, error.message));
       }
    }
 );
@@ -148,12 +148,12 @@ const userLogin = expressAsyncHandler(
 
          const { accessToken, refreshToken } = await generateTokens(user._id);
 
-       const newuser =   await userModel.findOne({ email }).select("-password -refreshToken")
+         const newuser = await userModel.findOne({ email }).select("-password -refreshToken")
 
          const options = {
             httpOnly: true,
             secure: true,
-            
+
          };
 
          res.status(200)
@@ -163,11 +163,11 @@ const userLogin = expressAsyncHandler(
                success: true,
                accessToken,
                refreshToken,
-               user:newuser,
+               user: newuser,
                message: "User loged in successfully",
             });
-      } catch (error:any) {
-         next(createHttpError(500,error.message))
+      } catch (error: any) {
+         next(createHttpError(500, error.message))
       }
    }
 );
@@ -176,34 +176,34 @@ const userLogin = expressAsyncHandler(
 
 const logoutUser = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
-     try {
-      const id = req.user?._id;
-      if (!isValidObjectId(id)) {
-         next(createHttpError(400, "not a valid Id"));
+      try {
+         const id = req.user?._id;
+         if (!isValidObjectId(id)) {
+            next(createHttpError(400, "not a valid Id"));
+         }
+         await userModel.findByIdAndUpdate(
+            id,
+            { $unset: { refreshToken: "" } },
+            { new: true }
+         );
+         const options = {
+            httpOnly: true,
+            secure: true,
+         };
+
+         // await redis.del(req.user?._id);
+
+         res.status(200)
+            .clearCookie("accessToken", options)
+            .clearCookie("refreshToken", options)
+            .json({
+               success: true,
+               message: "Logout successfully",
+            });
+
+      } catch (error: any) {
+         next(createHttpError(500, error.message))
       }
-      await userModel.findByIdAndUpdate(
-         id,
-         { $unset: { refreshToken: "" } },
-         { new: true }
-      );
-      const options = {
-         httpOnly: true,
-         secure: true,
-      };
-
-      // await redis.del(req.user?._id);
-
-      res.status(200)
-         .clearCookie("accessToken", options)
-         .clearCookie("refreshToken", options)
-         .json({
-            success: true,
-            message: "Logout successfully",
-         });
-      
-     } catch (error:any) {
-      next(createHttpError(500,error.message))
-     }
    }
 );
 
@@ -249,7 +249,7 @@ const refreshAccessToken = expressAsyncHandler(
             .cookie("refreshToken", refreshToken, options)
             .json({
                success: true,
-                accessToken,
+               accessToken,
                refreshToken,
                message: "Access token refreshed",
             });
@@ -342,7 +342,7 @@ interface IResetBodyPass {
 const createResetpass = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
       const { id } = req.params;
-      
+
       const { password, confirmPassword } = req.body as IResetBodyPass;
       try {
          if (password !== confirmPassword) {
@@ -378,10 +378,10 @@ const getAlluser = expressAsyncHandler(
 
          const skipIndex = (page - 1) * limit;
 
-       
+
 
          const users = await userModel.find().skip(skipIndex).limit(limit).select("-password -refreshToken");
-        
+
 
          // .populate("blogs","title ");
 
@@ -395,7 +395,7 @@ const getAlluser = expressAsyncHandler(
             users,
          });
       } catch (error: any) {
-       
+
          next(createHttpError(500, `${error.message}===>`));
       }
    }
@@ -404,21 +404,47 @@ const getAlluser = expressAsyncHandler(
 
 
 const deleteUser = expressAsyncHandler(
-   async(req: Request, res: Response, next: NextFunction)=>{
+   async (req: Request, res: Response, next: NextFunction) => {
       try {
-         const {id} = req.params;
+         const { id } = req.params;
 
-        await userModel.findByIdAndDelete({_id:id})
-         
-        res.status(200).json({
-         success: true,
-         message: "user deleted",
-      });
-      } catch (error:any) {
-         next(createHttpError(500,error.message))
+         await userModel.findByIdAndDelete({ _id: id })
+
+         res.status(200).json({
+            success: true,
+            message: "user deleted",
+         });
+      } catch (error: any) {
+         next(createHttpError(500, error.message))
       }
    }
 )
+
+const getUserUploadedBook =  expressAsyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+   try {
+      const { id } = req.params;
+
+      // Use findById to retrieve a single user document by ID
+      const user = await UserModel.findById(id).populate("uploadedBooks").exec();
+
+      if (!user) {
+         return next(createHttpError(404, 'User not found'));
+      }
+
+      // Assert the type of 'user' to IUser
+      const typedUser = user as IUser;
+
+      // At this point, TypeScript knows that 'typedUser' is of type IUser
+      // We can safely access properties like 'uploadedBooks'
+      res.status(200).json({
+         success: true,
+         message: 'User uploaded books',
+         uploadedBooks: typedUser.uploadedBooks, // This should work without TypeScript errors
+      });
+   } catch (error: any) {
+      next(createHttpError(500, error.message));
+   }
+});
 
 export {
    userRegister,
@@ -431,5 +457,6 @@ export {
    createResetpass,
    updateUser,
    getAlluser,
-   deleteUser
+   deleteUser,
+   getUserUploadedBook
 };

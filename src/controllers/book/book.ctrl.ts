@@ -7,6 +7,7 @@ import {
 } from "../../utils/uploadToCloudinary";
 import createHttpError from "http-errors";
 import mongoose, { isValidObjectId } from "mongoose";
+import UserModel from "../../models/user.model";
 
 // Create Book
 export const createBook = expressAsyncHandler(
@@ -35,6 +36,8 @@ export const createBook = expressAsyncHandler(
                public_id: resultCoverImage.public_id,
                url: resultCoverImage.url,
             };
+         } else {
+            return next(createHttpError(404, "cover Image are required."));
          }
 
          // Upload PDF Files
@@ -84,6 +87,12 @@ export const createBook = expressAsyncHandler(
             })),
             author: req.user?._id,
          });
+
+         const user = await UserModel.findOneAndUpdate(
+            { _id: req.user?._id }, 
+            { $addToSet: { uploadedBooks: book._id } }, 
+            { new: true } 
+         );
 
          // Respond with success message
          res.status(201).json({
@@ -230,47 +239,52 @@ export const deleteBook = expressAsyncHandler(
    }
 );
 
+export const readAllBooks = expressAsyncHandler(
+   async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         // Pagination parameters
+         const page = parseInt(req.query.page as string, 10) || 1; // Parse integer with base 10
+         const limit = parseInt(req.query.limit as string, 10) || 10; // Parse integer with base 10
 
-export const readAllBooks = expressAsyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-   try {
-     // Pagination parameters
-     const page = parseInt(req.query.page as string, 10) || 1; // Parse integer with base 10
-     const limit = parseInt(req.query.limit as string, 10) || 10; // Parse integer with base 10
- 
-     // Validate page and limit values
-     if (page < 1 || limit < 1) {
-       return next(createHttpError(400, 'Invalid page or limit value'));
-     }
- 
-     // Calculate the number of documents to skip
-     const skipIndex = (page - 1) * limit;
- 
-     // Query to fetch paginated results
-     const allBooksQuery = bookModel.find().skip(skipIndex).limit(limit).populate('author', 'name email');
-     const allBooks = await allBooksQuery.exec();
- 
-     // Get total count of books
-     const totalCountQuery = bookModel.countDocuments();
-     const totalCount = await totalCountQuery.exec();
- 
-     // Calculate total pages
-     const totalPages = Math.ceil(totalCount / limit);
- 
-     // Response with paginated data
-     res.status(200).json({
-       success: true,
-       message: 'Books successfully retrieved',
-       page: page,
-       limit: limit,
-       totalBooks: allBooks.length,
-       totalPages: totalPages,
-       books: allBooks,
-     });
-   } catch (error) {
-     console.error('Error reading books:', error);
-     next(createHttpError(500, 'Internal Server Error'));
+         // Validate page and limit values
+         if (page < 1 || limit < 1) {
+            return next(createHttpError(400, "Invalid page or limit value"));
+         }
+
+         // Calculate the number of documents to skip
+         const skipIndex = (page - 1) * limit;
+
+         // Query to fetch paginated results
+         const allBooksQuery = bookModel
+            .find()
+            .skip(skipIndex)
+            .limit(limit)
+            .populate("author", "name email");
+         const allBooks = await allBooksQuery.exec();
+
+         // Get total count of books
+         const totalCountQuery = bookModel.countDocuments();
+         const totalCount = await totalCountQuery.exec();
+
+         // Calculate total pages
+         const totalPages = Math.ceil(totalCount / limit);
+
+         // Response with paginated data
+         res.status(200).json({
+            success: true,
+            message: "Books successfully retrieved",
+            page: page,
+            limit: limit,
+            totalBooks: allBooks.length,
+            totalPages: totalPages,
+            books: allBooks,
+         });
+      } catch (error) {
+         console.error("Error reading books:", error);
+         next(createHttpError(500, "Internal Server Error"));
+      }
    }
- });
+);
 // delete specific files
 export const deleteSpecificFile = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
@@ -363,8 +377,8 @@ export const updateBookLikes = expressAsyncHandler(
          const alreadyLiked = book?.likedBy.includes(userObjectId);
          const alreadyDisliked = book?.dislikedBy.includes(userObjectId);
 
-         console.log("alreadyLiked",alreadyLiked)
-         console.log("disalreadyLiked",alreadyDisliked)
+         console.log("alreadyLiked", alreadyLiked);
+         console.log("disalreadyLiked", alreadyDisliked);
 
          const queryObject: any = {};
 
@@ -388,7 +402,8 @@ export const updateBookLikes = expressAsyncHandler(
 
          const likesData = await bookModel.findByIdAndUpdate(
             bookId,
-            queryObject,{new:true}
+            queryObject,
+            { new: true }
          );
 
          res.status(200).json({
@@ -431,7 +446,6 @@ export const updateBookDislikes = expressAsyncHandler(
             queryObject.$inc = { likes: -1 };
             queryObject.$addToSet = { dislikedBy: userObjectId };
             queryObject.$inc = { dislikes: 1 };
-           
          } else if (alreadyDisliked) {
             // If user already disliked the book, remove the dislike
             queryObject.$pull = { dislikedBy: userObjectId };
@@ -444,7 +458,8 @@ export const updateBookDislikes = expressAsyncHandler(
 
          const disliked = await bookModel.findByIdAndUpdate(
             bookId,
-            queryObject,{new:true}
+            queryObject,
+            { new: true }
          );
 
          res.status(200).json({
@@ -565,50 +580,51 @@ export const deleteSingleImage = expressAsyncHandler(
    }
 );
 
-
-
 export const searchBook = expressAsyncHandler(
    async (req: Request, res: Response, next: NextFunction) => {
-     try {
-       // Pagination parameters
-       const page = parseInt(req.query.page as string) || 1;
-       const limit = parseInt(req.query.limit as string) || 10;
- 
-       // Search parameters from request body
-       const searchParams = req.body;
- 
-       // Construct the search query dynamically
-       const searchQuery: any = {};
-       for (const [key, value] of Object.entries(searchParams)) {
-         if (typeof value === 'string') {
-           searchQuery[key] = { $regex: value, $options: 'i' }; 
-         } else {
-           searchQuery[key] = value; 
+      try {
+         // Pagination parameters
+         const page = parseInt(req.query.page as string) || 1;
+         const limit = parseInt(req.query.limit as string) || 10;
+
+         // Search parameters from request body
+         const searchParams = req.body;
+
+         // Construct the search query dynamically
+         const searchQuery: any = {};
+         for (const [key, value] of Object.entries(searchParams)) {
+            if (typeof value === "string") {
+               searchQuery[key] = { $regex: value, $options: "i" };
+            } else {
+               searchQuery[key] = value;
+            }
          }
-       }
- 
-       // Calculate the number of documents to skip
-       const skipIndex = (page - 1) * limit;
- 
-       // Query to fetch paginated and filtered results
-       const allBooks = await bookModel
-         .find(searchQuery)
-         .skip(skipIndex)
-         .limit(limit)
-         .populate('author', 'name email');
- 
-       // Get the total count for pagination purposes
-       const totalBooks = await bookModel.countDocuments(searchQuery);
- 
-       // Respond with the paginated and filtered books
-       res.status(200).json({
-         totalBooks,
-         totalPages: Math.ceil(totalBooks / limit),
-         currentPage: page,
-         books: allBooks
-       });
-     } catch (error: any) {
-       res.status(500).json({ message: 'Error fetching books', error: error.message });
-     }
+
+         // Calculate the number of documents to skip
+         const skipIndex = (page - 1) * limit;
+
+         // Query to fetch paginated and filtered results
+         const allBooks = await bookModel
+            .find(searchQuery)
+            .skip(skipIndex)
+            .limit(limit)
+            .populate("author", "name email");
+
+         // Get the total count for pagination purposes
+         const totalBooks = await bookModel.countDocuments(searchQuery);
+
+         // Respond with the paginated and filtered books
+         res.status(200).json({
+            totalBooks,
+            totalPages: Math.ceil(totalBooks / limit),
+            currentPage: page,
+            books: allBooks,
+         });
+      } catch (error: any) {
+         res.status(500).json({
+            message: "Error fetching books",
+            error: error.message,
+         });
+      }
    }
- );
+);

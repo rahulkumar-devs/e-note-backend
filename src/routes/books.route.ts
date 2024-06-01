@@ -23,8 +23,8 @@ booksRoute.route("/create-book").post(
    restrict("admin", "member"),
    upload.fields([
       { name: "coverImage", maxCount: 1 },
-      { name: "pdf_file", maxCount: 2 },
-      { name: "imageFiles", maxCount: 100 },
+      { name: "pdf_file", maxCount: 1 },
+      { name: "imageFiles", maxCount: 10 },
    ]),
    createBook
 );
@@ -33,8 +33,8 @@ booksRoute.route("/update-book/:id").put(
    restrict("admin", "member"),
    upload.fields([
       { name: "coverImage", maxCount: 1 },
-      { name: "pdf_file", maxCount: 2 },
-      { name: "imageFiles", maxCount: 100 },
+      { name: "pdf_file", maxCount: 1 },
+      { name: "imageFiles", maxCount: 10 },
    ]),
    updateBook
 );

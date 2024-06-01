@@ -6,40 +6,44 @@ import { IPost } from "./articles/blog.model";
 import { IBook } from "./book.model";
 
 export interface IUser extends Document {
-_id?:string;
+   _id?: string;
    name: string;
    email: string;
    password: string;
    avatar: string;
-   blogs?:IPost["_id"];
-   favourites:mongoose.Types.ObjectId[];
- 
+   blogs?: IPost["_id"];
+   favourites: mongoose.Types.ObjectId[];
+
    isVerified: boolean;
    role: ("admin" | "user" | "member")[];
+   uploadedBooks: Types.ObjectId[];
+
 
    refreshToken: string;
 
    isComparePassword: (password: string) => boolean;
    generateAccessToken: () => string;
    generateRefreshToken: () => string;
+
 }
 
 const UserSchema = new mongoose.Schema<IUser>(
    {
-      
+
       name: { type: String, required: true },
       email: { type: String, required: true, unique: true },
       password: { type: String },
       isVerified: { type: Boolean, default: false },
-      avatar:{type:String},
+      avatar: { type: String },
       role: {
          type: [String],
          default: ["user"],
          enum: ["user", "admin", "member"],
       },
-   
-      blogs:{ type: Schema.Types.ObjectId, ref: "Post"},
+
+      blogs: [{ type: Schema.Types.ObjectId, ref: "Post" }],
       refreshToken: { type: String, default: undefined },
+      uploadedBooks: [{ type: Schema.Types.ObjectId, ref: "Book" }]
    },
    {
       timestamps: true,
@@ -51,9 +55,9 @@ UserSchema.pre<IUser>("save", function (next) {
       if (this.password && this.isModified("password")) {
          this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(10));
       }
-      
 
-      if(this.email === config.admin_email && !this.role.includes("admin")){
+
+      if (this.email === config.admin_email && !this.role.includes("admin")) {
          this.role.push("admin");
       }
       next();
@@ -89,6 +93,8 @@ UserSchema.methods.generateRefreshToken = function () {
       { expiresIn: config.refresh_token_expiry }
    );
 };
+
+
 
 const UserModel: Model<IUser> = mongoose.model<IUser>("User", UserSchema);
 export default UserModel;
