@@ -89,9 +89,9 @@ export const createBook = expressAsyncHandler(
          });
 
          const user = await UserModel.findOneAndUpdate(
-            { _id: req.user?._id }, 
-            { $addToSet: { uploadedBooks: book._id } }, 
-            { new: true } 
+            { _id: req.user?._id },
+            { $addToSet: { uploadedBooks: book._id } },
+            { new: true }
          );
 
          // Respond with success message
@@ -123,6 +123,12 @@ export const updateBook = expressAsyncHandler(
          if (!book) {
             return next(createHttpError(404, "Book not found"));
          }
+
+         // update texts
+
+         if(title) book.title=title;
+         if(genre) book.genre=genre;
+         if(descriptions)book.descriptions=descriptions
 
          // Handle cover image update
          const coverImage = files.coverImage?.[0];
@@ -218,16 +224,18 @@ export const deleteBook = expressAsyncHandler(
          const id = req.params.id;
          // find book
          const book = await bookModel.findById(id);
-         await deleteToCloudinary(book?.coverImage.public_id as string);
+         if(book?.coverImage.public_id)await deleteToCloudinary(book?.coverImage.public_id as string);
 
-         await deleteToCloudinary(book?.pdf_file.public_id as string);
+        if(book?.pdf_file.public_id) await deleteToCloudinary(book?.pdf_file.public_id as string);
 
-         book?.imageFiles.map(async (img_file) => {
-            await deleteToCloudinary(img_file.public_id as string);
-         });
+         if(book?.imageFiles&& book?.imageFiles?.length>0){
+            book?.imageFiles.map(async (img_file) => {
+               await deleteToCloudinary(img_file.public_id as string);
+            });
+         }
 
          await bookModel.findByIdAndDelete(id);
-         // Respond with success message
+
          res.status(200).json({
             success: true,
             message: "Book successfully updated",
@@ -552,10 +560,10 @@ export const deleteSingleImage = expressAsyncHandler(
             });
             return;
          }
+
          const imageIndex = book.imageFiles.findIndex(
             (image) => image._id?.toString() === imageId
          );
-
          await deleteToCloudinary(imageId);
 
          if (imageIndex === -1) {
@@ -628,3 +636,4 @@ export const searchBook = expressAsyncHandler(
       }
    }
 );
+

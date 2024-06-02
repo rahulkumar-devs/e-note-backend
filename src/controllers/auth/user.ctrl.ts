@@ -422,10 +422,10 @@ const deleteUser = expressAsyncHandler(
 
 const getUserUploadedBook =  expressAsyncHandler(async (req: Request, res: Response, next: NextFunction) => {
    try {
-      const { id } = req.params;
+      const { userId } = req.params;
 
       // Use findById to retrieve a single user document by ID
-      const user = await UserModel.findById(id).populate("uploadedBooks").exec();
+      const user = await UserModel.findById(userId).populate("uploadedBooks").exec();
 
       if (!user) {
          return next(createHttpError(404, 'User not found'));

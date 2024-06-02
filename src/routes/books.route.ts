@@ -3,6 +3,7 @@ import { isAuthenticated } from "../middlewares/authentication.middleware";
 import { restrict } from "../middlewares/rolePermission.middleware";
 import {
    createBook,
+   deleteBook,
    deleteSingleImage,
    deleteSpecificFile,
    getSingleImage,
@@ -52,6 +53,10 @@ booksRoute
    .route("/search-books")
    .get(isAuthenticated, restrict("user", "admin", "member"), searchBook);
 
+   booksRoute
+   .route("/delete-book/:id")
+   .delete(isAuthenticated,restrict("admin","member"), deleteBook);
+
 // <==============================>
 // <========General Routes============>
 // <==============================>
@@ -67,5 +72,6 @@ booksRoute
 booksRoute
    .route("/delete-single-image")
    .delete(isAuthenticated, deleteSingleImage);
+
 
 export default booksRoute;
