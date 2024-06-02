@@ -38,7 +38,7 @@ userRouter.route("/new-password/:id").post(createResetpass);
 userRouter.route("/logout").post(isAuthenticated, logoutUser);
 userRouter.route("/delete-users/:id").delete(isAuthenticated,restrict("admin"),deleteUser);
 userRouter.route("/users").get(isAuthenticated,restrict("admin"),getAlluser);
-userRouter.route("/uploaded-books/:id").get(isAuthenticated,restrict("admin","member"),getUserUploadedBook);
+userRouter.route("/uploaded-books/:userId").get(isAuthenticated,restrict("admin","member"),getUserUploadedBook);
 
 
 
